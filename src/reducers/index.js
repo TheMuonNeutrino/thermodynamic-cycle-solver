@@ -234,7 +234,6 @@ function _getEntropyChange(step, nextStep, state) {
     return Thermodynamics.solveEntropyChange({
         pressure_1: step.pressure,
         volume_1: step.volume,
-        temperature_1: step.temperature,
         pressure_2: nextStep.pressure,
         volume_2: nextStep.volume
     }, state.system).entropyChange
