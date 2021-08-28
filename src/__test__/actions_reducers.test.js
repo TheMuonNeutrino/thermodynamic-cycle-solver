@@ -236,15 +236,33 @@ describe('App state - Three step types',()=>{
         type: 'isothermal'
     }
     const fourthStep = {
-        pressure: 40000,
-        volume: 1,
-        temperature: 2000/Thermodynamics.R,
-        type: 'isochoric',
+        pressure: 30000,
+        temperature:thirdStep.temperature,
+        volume:4/3,
+        type:'isobaric'
     }
-    it('Propagates changes to thermodynamic step',()=>{
-        var store = createStore(thermodynamicSystemReducer,{
+    const fifthStep = {
+        pressure: 30000,
+        volume: 1,
+        temperature:1500/Thermodynamics.R,
+        type:'isochoric'
+    }
+    var store
+    beforeEach(()=>{
+        store = createStore(thermodynamicSystemReducer,{
             system: system,
-            steps: [firstStep,secondStep,thirdStep,fourthStep]
+            steps: [firstStep,secondStep,thirdStep,fourthStep,fifthStep]
+        })
+    })
+    it('Propagates changes to thermodynamic step',()=>{
+        store = createStore(thermodynamicSystemReducer,{
+            system: system,
+            steps: [firstStep,secondStep,thirdStep,{
+                pressure: 40000,
+                volume: 1,
+                temperature: 2000/Thermodynamics.R,
+                type: 'isochoric',
+            }]
         })
         store.dispatch(steps_updateProperties(2,{temperature: 2500/Thermodynamics.R}))
         const resState = store.getState()
@@ -255,13 +273,6 @@ describe('App state - Three step types',()=>{
         expect(resState.steps[0].volume).toBeCloseTo(1)
     })
     it('Propagates changes to thermodynamic step respecting following isobaric step',()=>{
-        var store = createStore(thermodynamicSystemReducer,{
-            system: system,
-            steps: [firstStep,secondStep,thirdStep,
-                {pressure: 30000,temperature:thirdStep.temperature,volume:4/3,type:'isobaric'},
-                {pressure: 30000,volume: 1,temperature:1500/Thermodynamics.R,type:'isochoric'}
-            ]
-        })
         store.dispatch(steps_updateProperties(2,{temperature: 2500/Thermodynamics.R}))
         const resState = store.getState()
         expect(resState.steps[2].temperature).toBeCloseTo(2500/Thermodynamics.R)
@@ -269,5 +280,22 @@ describe('App state - Three step types',()=>{
         expect(resState.steps[3].pressure).toBeCloseTo(30000)
         expect(resState.steps[4].pressure).toBeCloseTo(30000)
         expect(resState.steps[4].volume).toBeCloseTo(1)
+    })
+    it('Propagates changes to isochoric step respecting following isothermal step',()=>{
+        store.dispatch(steps_updateProperties(1,{volume: 2.1}))
+        const resState = store.getState()
+        expect(resState.steps[1].volume).toBeCloseTo(2.1)
+        expect(resState.steps[1].pressure).toBeCloseTo(secondStep.pressure)
+        expect(resState.steps[2].volume).toBeCloseTo(2.1)
+        expect(resState.steps[2].temperature).toBeCloseTo(thirdStep.temperature)
+    })
+    it('Backwards propagates changes to isobaric step respecting prior isothermal step',()=>{
+        store.dispatch(steps_updateProperties(4,{pressure: 32000}))
+        const resState = store.getState()
+        expect(resState.steps[4].pressure).toBeCloseTo(32000)
+        expect(resState.steps[4].volume).toBeCloseTo(fifthStep.volume)
+        expect(resState.steps[3].pressure).toBeCloseTo(32000)
+        expect(resState.steps[3].temperature).toBeCloseTo(fourthStep.temperature)
+        expect(resState.steps[2].temperature).toBeCloseTo(thirdStep.temperature)
     })
 })

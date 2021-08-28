@@ -22,18 +22,20 @@ const _applySubsequentPointConstraintsAtIndex = (
     ) => {
     var step = state.steps[index]
     step = Thermodynamics.solvePVT(step, state.system)
-    var subsequentStepIndex = getSubsequentIndex(index, state)
-    var subsequentStep = state.steps[subsequentStepIndex]
-    var subsequentStepConstrained = applyConstraintsFunc(step, subsequentStep)
-    if (subsequentStepConstrained === subsequentStep) {
+    var subStepIndex = getSubsequentIndex(index, state)
+    var subsubStepIndex = getSubsequentIndex(subStepIndex,state)
+    var subStep = state.steps[subStepIndex]
+    var subsubStep = state.steps[subsubStepIndex]
+    var subStepConstrained = applyConstraintsFunc(step, subStep,subsubStep)
+    if (subStepConstrained === subStep) {
         return [{
             ...state, steps: _steps_replaceAtIndex(state.steps, index, step)
         }, true]
     }
-    subsequentStep = Thermodynamics.solvePVT(subsequentStepConstrained, state.system)
+    subStep = Thermodynamics.solvePVT(subStepConstrained, state.system)
     return [{
         ...state, steps: _steps_replaceAtIndex(
-            _steps_replaceAtIndex(state.steps, subsequentStepIndex, subsequentStep),
+            _steps_replaceAtIndex(state.steps, subStepIndex, subStep),
             index, step)
     }, false]
 }
@@ -182,25 +184,41 @@ function _getStepEntropy(step) {
         step.staticEntropy : step.entropy
 }
 
-function _applyStepTypeConstraintsToSubsequentPoint(step,subsequentStep,refStep) {
+function _applyStepTypeConstraintsToSubsequentPoint(
+        step,subsequentStep,refStep,secondRefStep
+    ){
     if (refStep.type === 'isobaric' && step.pressure !== subsequentStep.pressure) {
-        subsequentStep = {...subsequentStep,  pressure: step.pressure, temperature: undefined }
+        subsequentStep = {...subsequentStep,  pressure: step.pressure}
+        if (['none','isobaric','isochoric'].includes(secondRefStep.type)){
+            subsequentStep.temperature = undefined
+        }
+        if (secondRefStep.type === 'isothermal'){subsequentStep.volume = undefined}
     }
     if (refStep.type === 'isochoric' && step.volume !== subsequentStep.volume){
-        subsequentStep = {...subsequentStep, volume: step.volume, temperature: undefined}
+        subsequentStep = {...subsequentStep, volume: step.volume}
+        if (['none','isobaric','isochoric'].includes(secondRefStep.type)){
+            subsequentStep.temperature = undefined
+        }
+        if (secondRefStep.type === 'isothermal'){subsequentStep.pressure = undefined}
     }
     if (refStep.type === 'isothermal' && step.temperature !== subsequentStep.temperature){
-        subsequentStep = {...subsequentStep, temperature: step.temperature, pressure: undefined}
+        subsequentStep = {...subsequentStep, temperature: step.temperature}
+        if (['none','isobaric','isothermal'].includes(secondRefStep.type)){
+            subsequentStep.volume = undefined
+        }
+        if (secondRefStep.type === 'isochoric'){subsequentStep.pressure = undefined}
     }
     return subsequentStep
 }
 
-function _applyStepTypeConstraintsToNextPoint(step, nextStep) {
-    return _applyStepTypeConstraintsToSubsequentPoint(step,nextStep,step)
+function _applyStepTypeConstraintsToNextPoint(step, nextStep,nextNextStep) {
+    return _applyStepTypeConstraintsToSubsequentPoint(step,nextStep,step,nextStep)
 }
 
-function _applyStepTypeConstraintsToPreviousPoint(step, previousStep) {
-    return _applyStepTypeConstraintsToSubsequentPoint(step,previousStep,previousStep)
+function _applyStepTypeConstraintsToPreviousPoint(step, previousStep,previousPreviousStep) {
+    return _applyStepTypeConstraintsToSubsequentPoint(
+        step,previousStep,previousStep,previousPreviousStep
+    )
 }
 
 function _markUndefinedOneUnspecifiedPvtParameter(action) {
