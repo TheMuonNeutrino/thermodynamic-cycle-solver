@@ -17,44 +17,37 @@ initialState.steps.push({
         type: 'none'
 })
 
-const _applyNextPointConstraintsAtIndex = (state, index) => {
+const _applySubsequentPointConstraintsAtIndex = (
+        state, index, applyConstraintsFunc, getSubsequentIndex
+    ) => {
     var step = state.steps[index]
     step = Thermodynamics.solvePVT(step, state.system)
-    var nextStepIndex = _getNextIndex(index, state)
-    var nextStep = state.steps[nextStepIndex]
-    var nextStepConstrained = _applyStepTypeConstraintsToNextPoint(step, nextStep)
-    if (nextStepConstrained === nextStep) {
+    var subsequentStepIndex = getSubsequentIndex(index, state)
+    var subsequentStep = state.steps[subsequentStepIndex]
+    var subsequentStepConstrained = applyConstraintsFunc(step, subsequentStep)
+    if (subsequentStepConstrained === subsequentStep) {
         return [{
             ...state, steps: _steps_replaceAtIndex(state.steps, index, step)
         }, true]
     }
-    nextStep = Thermodynamics.solvePVT(nextStepConstrained, state.system)
+    subsequentStep = Thermodynamics.solvePVT(subsequentStepConstrained, state.system)
     return [{
         ...state, steps: _steps_replaceAtIndex(
-            _steps_replaceAtIndex(state.steps, nextStepIndex, nextStep),
+            _steps_replaceAtIndex(state.steps, subsequentStepIndex, subsequentStep),
             index, step)
     }, false]
 }
 
+const _applyNextPointConstraintsAtIndex = (state, index) => {
+    return _applySubsequentPointConstraintsAtIndex(
+        state,index,_applyStepTypeConstraintsToNextPoint,_getNextIndex
+    )
+}
+
 const _applyPreviousPointConstraintsAtIndex = (state, index) => {
-    var step = state.steps[index]
-    step = Thermodynamics.solvePVT(step, state.system)
-    var previousStepIndex = _getPreviousIndex(index, state)
-    var previousStep = state.steps[previousStepIndex]
-    var previousStepConstrained = _applyStepTypeConstraintsToPreviousPoint(previousStep, step)
-    if (previousStepConstrained === previousStep) {
-        return [{
-            ...state, steps: _steps_replaceAtIndex(state.steps, index, step)
-        }, true]
-    }
-
-    previousStep = Thermodynamics.solvePVT(previousStepConstrained, state.system)
-
-    return [{
-        ...state, steps: _steps_replaceAtIndex(
-            _steps_replaceAtIndex(state.steps, previousStepIndex, previousStep),
-            index, step)
-    }, false]
+    return _applySubsequentPointConstraintsAtIndex(
+        state,index,_applyStepTypeConstraintsToPreviousPoint,_getPreviousIndex
+    )
 }
 const steps_update = (state,action) => {
     
@@ -65,13 +58,13 @@ const steps_update = (state,action) => {
     state = _operateOnNextUntilCondition(
         state,startIndex,
         _applyNextPointConstraintsAtIndex,
-        _generateNotReturnedToStartOrBreakSignalCondition(startIndex)
+        _generateRTSorSignalCondition(startIndex)
     )
 
     state = _operateOnPreviousUntilCondition(
         state,startIndex,
         _applyPreviousPointConstraintsAtIndex,
-        _generateNotReturnedToStartOrBreakSignalCondition(startIndex)
+        _generateRTSorSignalCondition(startIndex)
     )
 
     return _forEachStep(state,(state,index)=>{
@@ -146,7 +139,7 @@ const thermodynamicSystemReducer = (state=initialState,action) =>{
 
 export default thermodynamicSystemReducer
 
-function _generateNotReturnedToStartOrBreakSignalCondition(startIndex) {
+function _generateRTSorSignalCondition(startIndex) {
     return (state, index, breakCondition) => {
         const returnedToStartIndex = index === startIndex && breakCondition !== undefined
         if (returnedToStartIndex) { return false} 
@@ -176,18 +169,19 @@ function _getStepEntropy(step) {
         step.staticEntropy : step.entropy
 }
 
-function _applyStepTypeConstraintsToNextPoint(step, nextStep) {
-    if (step.type === 'isobaric' && step.pressure !== nextStep.pressure) {
-        nextStep = { ...nextStep, pressure: step.pressure, temperature: undefined }
+function _applyStepTypeConstraintsToSubsequentPoint(step,subsequentStep,refStep) {
+    if (refStep.type === 'isobaric' && step.pressure !== subsequentStep.pressure) {
+        subsequentStep = {...subsequentStep,  pressure: step.pressure, temperature: undefined }
     }
-    return nextStep
+    return subsequentStep
 }
 
-function _applyStepTypeConstraintsToPreviousPoint(previousStep, step) {
-    if (previousStep.type === 'isobaric' && previousStep.pressure !== step.pressure) {
-        previousStep = { ...previousStep, pressure: step.pressure, temperature: undefined }
-    }
-    return previousStep
+function _applyStepTypeConstraintsToNextPoint(step, nextStep) {
+    return _applyStepTypeConstraintsToSubsequentPoint(step,nextStep,step)
+}
+
+function _applyStepTypeConstraintsToPreviousPoint(step, previousStep) {
+    return _applyStepTypeConstraintsToSubsequentPoint(step,previousStep,previousStep)
 }
 
 function _markUndefinedOneUnspecifiedPvtParameter(action) {
