@@ -1,4 +1,4 @@
-import Thermodynamics from "../components/Thermodynamics";
+import Thermodynamics from "../Thermodynamics";
 
 describe('solvePVT tests',()=>{
     const system = {

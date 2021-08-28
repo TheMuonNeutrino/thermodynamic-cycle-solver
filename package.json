@@ -36,7 +36,9 @@
     ]
   },
   "devDependencies": {
+    "@wojtekmaj/enzyme-adapter-react-17": "^0.6.3",
     "enzyme": "^3.11.0",
-    "enzyme-adapter-react-15": "^1.4.3"
+    "react-addons-test-utils": "^15.6.2",
+    "react-test-renderer": "^17.0.2"
   }
 }

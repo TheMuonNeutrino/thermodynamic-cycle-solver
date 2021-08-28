@@ -1,25 +1,21 @@
 import React from 'react';
+import StepListItem from './StepListItem';
 
-class App extends React.Component{
-    constructor(props){
-        super(props)
-        this.state = {steps: []}
-    }
-    render(){
-        return(
-            <div className=''>
-                <div>
-                    <canvas className='pv diagram'>
+const App = () => {
+    
+    return(
+        <div className=''>
+            <div>
+                <canvas className='pv diagram'>
 
-                    </canvas>
-                    <canvas className='st diagram'>
+                </canvas>
+                <canvas className='st diagram'>
 
-                    </canvas>
-                </div>
-                <StepList />
+                </canvas>
             </div>
-        )
-    }
+            <StepListItem />
+        </div>
+    )
 }
 
 export default App

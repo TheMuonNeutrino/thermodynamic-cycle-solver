@@ -1,29 +1,31 @@
+import { hasDefinedKey } from "./Utils"
+
 const R = 8.3145
 
 class InsufficientConstraintsError extends Error {}
 class IncompatibleConstraintsError extends Error {}
 
-const _flagsForKeysInPoint = (point) =>{
+const flagsForKeysInPoint = (point) =>{
     const hasT = 'temperature' in point && point.temperature !== undefined
-    const hasV = 'volume' in point && point.volume != undefined
-    const hasP = 'pressure' in point && point.pressure != undefined
+    const hasV = 'volume' in point && point.volume !== undefined
+    const hasP = 'pressure' in point && point.pressure !== undefined
     return [hasT,hasV,hasP]
 }
 
 const solvePVT = (pointConstraints,system) => {
     const point = Object.assign({},pointConstraints)
-    const [hasT,hasV,hasP] = _flagsForKeysInPoint(point)
+    const [hasT,hasV,hasP] = flagsForKeysInPoint(point)
 
     if (hasT + hasP + hasV < 2){
         throw new InsufficientConstraintsError(
-            `Must specify two of the constraints in point: ${new String(point)}`
+            `Must specify two of the constraints in point: ${JSON.stringify(point)}`
         );
     }
     if (hasT && hasP && hasV){
         const computedT = point.pressure * point.volume / (R * system.moles)
         if (Math.abs(computedT - point.temperature) > 0.0001){
             throw new IncompatibleConstraintsError(
-                `Point ${new String(point)} is not a valid solution to the PVT equation`
+                `Point ${JSON.stringify(point)} is not a valid solution to the PVT equation`
             )
         }
         return point
@@ -43,7 +45,7 @@ const solvePVT = (pointConstraints,system) => {
 
 const _computeEntropyCalculationComponent = (pointConstraints,system) =>{
     var point = Object.assign({},pointConstraints)
-    const [hasT,hasV,hasP] = _flagsForKeysInPoint(point)
+    const [hasT,hasV,hasP] = flagsForKeysInPoint(point)
 
     if (hasT + hasV + hasP === 0){
         throw new InsufficientConstraintsError(
@@ -97,15 +99,16 @@ const _extractPointsFromStep = (step) => {
 
 const solveEntropyChange = (stepConstraints,system) => {
     const step = Object.assign({},stepConstraints)
-    const hasDeltaS = 'entropyChange' in step
-    const hasP1 = 'pressure_1' in step
-    const hasV1 = 'volume_1' in step
-    const hasT1 = 'temperature_1' in step
-    const hasP2 = 'pressure_2' in step
-    const hasV2 = 'volume_2' in step
-    const hasT2 = 'temperature_2' in step
+    const hasDeltaS = hasDefinedKey(step,'entropyChange')
+    const hasP1 = hasDefinedKey(step,'pressure_1')
+    const hasV1 = hasDefinedKey(step,'volume_1')
+    const hasT1 = hasDefinedKey(step,'temperature_1')
+    const hasP2 = hasDefinedKey(step,'pressure_2')
+    const hasV2 = hasDefinedKey(step,'volume_2')
+    const hasT2 = hasDefinedKey(step,'temperature_2')
+    const numberOfConstraints = hasDeltaS + hasP1 + hasV1 + hasT1 + hasP2 + hasV2 + hasT2
 
-    if (hasDeltaS + hasP1 + hasV1 + hasT1 + hasP2 + hasV2 + hasT2 < 4){
+    if (numberOfConstraints < 4){
         throw new InsufficientConstraintsError('Must specify atleast 4 constraints')
     }
 
@@ -113,6 +116,7 @@ const solveEntropyChange = (stepConstraints,system) => {
 
     var A, B, X, hasA, hasB
     hasA = hasB = false
+    
     point1 = _computeEntropyCalculationComponent(point1,system)
     if ('entropyCalculationComponent' in point1){
         B = point1.entropyCalculationComponent
@@ -170,6 +174,7 @@ const Thermodynamics = {
     R, 
     solvePVT,
     solveEntropyChange,
+    flagsForKeysInPoint,
     InsufficientConstraintsError, 
     IncompatibleConstraintsError
 }
