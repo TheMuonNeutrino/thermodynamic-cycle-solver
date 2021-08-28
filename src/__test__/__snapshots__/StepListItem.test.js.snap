@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`StepList tests should render StepList 1`] = `
+exports[`StepListItem tests should render StepListItem 1`] = `
 Array [
   <div
     className="ui container"
@@ -14,26 +14,26 @@ Array [
         <ParameterField
           label="Pressure"
           readOnly={false}
+          updateKey="pressure"
           updateValue={[Function]}
-          value={10000}
         />
         <ParameterField
           label="Volume"
           readOnly={false}
+          updateKey="volume"
           updateValue={[Function]}
-          value={1}
         />
         <ParameterField
           label="Temperature"
           readOnly={false}
+          updateKey="temperature"
           updateValue={[Function]}
-          value={100}
         />
         <ParameterField
           label="Entropy"
           readOnly={true}
+          updateKey="entropy"
           updateValue={[Function]}
-          value={1}
         />
       </div>
     </div>

@@ -1,11 +1,13 @@
 import React from 'react';
 import './ParameterField.css';
 
-const ParameterField = ({label,value,readOnly,updateValue}) =>{
+const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
     var onChangeParam = ''
     if (!readOnly){
         onChangeParam = (event) => {
-            
+            var pointChanges = {}
+            pointChanges[updateKey] = event.target.value
+            updateValue(pointChanges)
         }
     }
 

@@ -1,30 +1,46 @@
 import React from 'react';
 import ParameterField from './ParameterField';
+import { Form } from 'semantic-ui-react';
+import './StepListItem.css';
 
+const DropDown = () => {
+    const dropdownOptions = [
+        {key: 'none', text:'(None)', value: 'none'},
+        {key: 'isobaric', text:'Isobaric', value:'isobaric'},
+        {key: 'isochoric', text:'Isochoric', value:'isochoric'},
+        {key: 'isothermal', text:'Isothermal', value:'isothermal'},
+        {key: 'isentropic', text:'Isentropic', value:'isentropic'},
+    ]
 
+    return(
+        <Form.Dropdown search selection options={dropdownOptions} label='Step Type' />
+    )
+}
 
-const StepListItem = () => {
+const StepListItem = (step,index) => {
 
     const pointUpdateFunction = () =>{
 
     }
 
-    const point = [
+    var entropyChange = 5
+
+    const firstLinefieldProperties = [
         {
             label: 'Pressure',
-            value: 10000,
+            key: 'pressure',
             readOnly: false,
         },{
             label: 'Volume',
-            value: 1,
+            key: 'volume',
             readOnly: false,
         },{
             label: 'Temperature',
-            value: 100,
+            key: 'temperature',
             readOnly: false
         },{
             label: 'Entropy',
-            value: 1,
+            key: 'entropy',
             readOnly: true
         }
     ]
@@ -32,16 +48,28 @@ const StepListItem = () => {
     return(
         <div className='ui container'>
             <div className='ui large form'>
-                <div className='four fields'>
-                    {point.map((item)=>{return(
+                <div className='fields'>
+                    {firstLinefieldProperties.map((item)=>{return(
                         <ParameterField 
                             label={item.label}
-                            value={item.value}
+                            value={step[item.key]}
                             key={item.label}
                             readOnly={item.readOnly}
                             updateValue={pointUpdateFunction}
+                            updateKey={item.key}
                         />
                     )})}
+                </div>
+                <div className='fields'>
+                    <div className='step-list-dropdown-wrapper'>
+                        <DropDown />
+                    </div>
+                    <ParameterField
+                        label='Entropy Change'
+                        value={entropyChange}
+                        key='entropyChange'
+                        readOnly={true}
+                    />
                 </div>
             </div>
         </div>

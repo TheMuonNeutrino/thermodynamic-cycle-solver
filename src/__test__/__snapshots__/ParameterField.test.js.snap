@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ParameterField tests Should render with label and value 1`] = `
+Array [
+  <div
+    className="field parameter-field"
+  >
+    <label
+      className="parameter-field-label"
+    >
+      myTestLabel
+    </label>
+    <input
+      className="parameter-field-value"
+      onChange={[Function]}
+      readOnly={false}
+      value="myTestValue"
+    />
+  </div>,
+]
+`;
