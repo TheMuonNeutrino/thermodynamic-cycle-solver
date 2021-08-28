@@ -26,7 +26,7 @@ const _applySubsequentPointConstraintsAtIndex = (
     var subsubStepIndex = getSubsequentIndex(subStepIndex,state)
     var subStep = state.steps[subStepIndex]
     var subsubStep = state.steps[subsubStepIndex]
-    var subStepConstrained = applyConstraintsFunc(step, subStep,subsubStep)
+    var subStepConstrained = applyConstraintsFunc(step, subStep,subsubStep,state.system)
     if (subStepConstrained === subStep) {
         return [{
             ...state, steps: _steps_replaceAtIndex(state.steps, index, step)
@@ -167,12 +167,15 @@ function _recalculateEntropyAtIndex(state, index) {
     var step = state.steps[index]
     var nextStep = _getNextStep(state, index)
     const isUnfixedEntropyStepType = (
-        step.type !== 'isentropic' &&
         step.type !== 'none' &&
         state.steps.length !== 1
     )
     if (isUnfixedEntropyStepType) {
-        step.entropyChange = _getEntropyChange(step, nextStep, state)
+        if (step.type === 'isentropic'){
+            step.entropyChange = 0
+        }else{
+            step.entropyChange = _getEntropyChange(step, nextStep, state)
+        }
         var stepEntropy = _getStepEntropy(step)
         nextStep.entropy = stepEntropy + step.entropyChange
     }
@@ -185,7 +188,7 @@ function _getStepEntropy(step) {
 }
 
 function _applyStepTypeConstraintsToSubsequentPoint(
-        step,subsequentStep,refStep,secondRefStep
+        step,subsequentStep,refStep,secondRefStep,system
     ){
     if (refStep.type === 'isobaric' && step.pressure !== subsequentStep.pressure) {
         subsequentStep = {...subsequentStep,  pressure: step.pressure}
@@ -208,16 +211,39 @@ function _applyStepTypeConstraintsToSubsequentPoint(
         }
         if (secondRefStep.type === 'isochoric'){subsequentStep.pressure = undefined}
     }
+    if (refStep.type === 'isentropic'){
+        const stepEntropyConstraints = {
+            entropyChange: 0,
+            volume_1: step.volume,
+            pressure_1:step.pressure,
+        }
+        if (['none','isentropic','isothermal'].includes(secondRefStep.type)){
+            stepEntropyConstraints.temperature_2 = subsequentStep.temperature
+        }
+        if (secondRefStep.type === 'isobaric'){
+            stepEntropyConstraints.pressure_2 = subsequentStep.pressure
+        }
+        if (secondRefStep.type === 'isochoric'){
+            stepEntropyConstraints.volume_2 = subsequentStep.volume
+        }
+
+        const stepSolution = Thermodynamics.solveEntropyChange(stepEntropyConstraints,system)
+        subsequentStep = {...subsequentStep,
+            pressure: stepSolution.pressure_2, 
+            volume: stepSolution.volume_2,
+            temperature: stepSolution.temperature_2,
+        }
+    }
     return subsequentStep
 }
 
-function _applyStepTypeConstraintsToNextPoint(step, nextStep,nextNextStep) {
-    return _applyStepTypeConstraintsToSubsequentPoint(step,nextStep,step,nextStep)
+function _applyStepTypeConstraintsToNextPoint(step, nextStep,nextNextStep,system) {
+    return _applyStepTypeConstraintsToSubsequentPoint(step,nextStep,step,nextStep,system)
 }
 
-function _applyStepTypeConstraintsToPreviousPoint(step, previousStep,previousPreviousStep) {
+function _applyStepTypeConstraintsToPreviousPoint(step, previousStep,previousPreviousStep,system) {
     return _applyStepTypeConstraintsToSubsequentPoint(
-        step,previousStep,previousStep,previousPreviousStep
+        step,previousStep,previousStep,previousPreviousStep,system
     )
 }
 
