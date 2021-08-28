@@ -50,10 +50,12 @@ const _applyPreviousPointConstraintsAtIndex = (state, index) => {
     )
 }
 const steps_update = (state,action) => {
+    checkStepTypeIsValid(action.newStep)
     
     state = {...state, steps: _steps_replaceAtIndex(
         state.steps, action.index, action.newStep
     )}
+
     var startIndex = action.index
     state = _operateOnNextUntilCondition(
         state,startIndex,
@@ -139,10 +141,21 @@ const thermodynamicSystemReducer = (state=initialState,action) =>{
 
 export default thermodynamicSystemReducer
 
+function checkStepTypeIsValid(newStep) {
+    if (hasDefinedKey(newStep, 'type')) {
+        if (!['none', 'isobaric', 'isochoric', 'isothermal', 'isentropic'].includes(newStep.type)) {
+            throw new Error(
+                `Step type must be one of 'none','isobaric','isochoric','isothermal' or 'isentropic'
+                not ${newStep.type}`
+            )
+        }
+    }
+}
+
 function _generateRTSorSignalCondition(startIndex) {
     return (state, index, breakCondition) => {
         const returnedToStartIndex = index === startIndex && breakCondition !== undefined
-        if (returnedToStartIndex) { return false} 
+        if (returnedToStartIndex) {return false} 
         if (breakCondition) { return false} 
         return true
     }
@@ -172,6 +185,12 @@ function _getStepEntropy(step) {
 function _applyStepTypeConstraintsToSubsequentPoint(step,subsequentStep,refStep) {
     if (refStep.type === 'isobaric' && step.pressure !== subsequentStep.pressure) {
         subsequentStep = {...subsequentStep,  pressure: step.pressure, temperature: undefined }
+    }
+    if (refStep.type === 'isochoric' && step.volume !== subsequentStep.volume){
+        subsequentStep = {...subsequentStep, volume: step.volume, temperature: undefined}
+    }
+    if (refStep.type === 'isothermal' && step.temperature !== subsequentStep.temperature){
+        subsequentStep = {...subsequentStep, temperature: step.temperature, pressure: undefined}
     }
     return subsequentStep
 }

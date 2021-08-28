@@ -3,7 +3,7 @@ import {createStore} from 'redux'
 import thermodynamicSystemReducer from '../reducers'
 import {steps_add, steps_update, steps_updateProperties, steps_delete, system_setMoles} from '../actions'
 
-describe('App state - tests',()=>{
+describe('App state - Basic tests',()=>{
     const system = {
         moles: 1,
         isochoricHeatCapacity: 5/2 * Thermodynamics.R
@@ -188,9 +188,86 @@ describe('App state - tests',()=>{
     it('Backwards propagates changes in the pressure of isobaric step',()=>{
         store.dispatch(steps_add(-1,secondStep))
         store.dispatch(steps_updateProperties(0,{type:'isobaric'}))
-        store.dispatch(steps_updateProperties(1,{pressure: 11000, volume: undefined}))
+        store.dispatch(steps_updateProperties(1,{pressure: 11000}))
         const resState = store.getState()
         expect(resState.steps[0].pressure).toBeCloseTo(11000)
     })
-    
+    it('Propagates change in the volume of isochoric step',()=>{
+        store = createStore(thermodynamicSystemReducer,{
+            system: system,
+            steps: [
+                {...secondStep, type: 'isochoric'},
+                thirdStep
+            ]
+        })
+        store.dispatch(steps_updateProperties(0,{volume:2.1}))
+        const resState = store.getState()
+        expect(resState.steps[1].volume).toBeCloseTo(2.1)
+    })
+    it('Throws an error on passing invalid type',()=>{
+        expect(()=>{
+            store.dispatch(steps_updateProperties(0,{type:'myInvalidType'}))
+        }).toThrow(Error)
+    })
+})
+
+describe('App state - Three step types',()=>{
+    const system = {
+        moles: 20,
+        isochoricHeatCapacity: 3/2 * Thermodynamics.R
+    }
+    const firstStep = {
+        pressure: 10000,
+        volume: 1,
+        temperature: 1000/2/Thermodynamics.R,
+        staticEntropy: 0,
+        type: 'isobaric'
+    }
+    const secondStep = {
+        pressure: 10000,
+        volume: 2,
+        temperature: 1000/Thermodynamics.R,
+        type: 'isochoric'
+    }
+    const thirdStep = {
+        pressure: 20000,
+        volume: 2,
+        temperature: 2000/Thermodynamics.R,
+        type: 'isothermal'
+    }
+    const fourthStep = {
+        pressure: 40000,
+        volume: 1,
+        temperature: 2000/Thermodynamics.R,
+        type: 'isochoric',
+    }
+    it('Propagates changes to thermodynamic step',()=>{
+        var store = createStore(thermodynamicSystemReducer,{
+            system: system,
+            steps: [firstStep,secondStep,thirdStep,fourthStep]
+        })
+        store.dispatch(steps_updateProperties(2,{temperature: 2500/Thermodynamics.R}))
+        const resState = store.getState()
+        expect(resState.steps[3].temperature).toBeCloseTo(2500/Thermodynamics.R)
+        expect(resState.steps[3].volume).toBeCloseTo(1)
+        expect(resState.steps[3].pressure).toBeCloseTo(2500*20)
+        expect(resState.steps[0].pressure).toBeCloseTo(10000)
+        expect(resState.steps[0].volume).toBeCloseTo(1)
+    })
+    it('Propagates changes to thermodynamic step respecting following isobaric step',()=>{
+        var store = createStore(thermodynamicSystemReducer,{
+            system: system,
+            steps: [firstStep,secondStep,thirdStep,
+                {pressure: 30000,temperature:thirdStep.temperature,volume:4/3,type:'isobaric'},
+                {pressure: 30000,volume: 1,temperature:1500/Thermodynamics.R,type:'isochoric'}
+            ]
+        })
+        store.dispatch(steps_updateProperties(2,{temperature: 2500/Thermodynamics.R}))
+        const resState = store.getState()
+        expect(resState.steps[2].temperature).toBeCloseTo(2500/Thermodynamics.R)
+        expect(resState.steps[3].temperature).toBeCloseTo(2500/Thermodynamics.R)
+        expect(resState.steps[3].pressure).toBeCloseTo(30000)
+        expect(resState.steps[4].pressure).toBeCloseTo(30000)
+        expect(resState.steps[4].volume).toBeCloseTo(1)
+    })
 })
