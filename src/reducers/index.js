@@ -36,6 +36,26 @@ const _applyNextPointConstraintsAtIndex = (state, index) => {
     }, false]
 }
 
+const _applyPreviousPointConstraintsAtIndex = (state, index) => {
+    var step = state.steps[index]
+    step = Thermodynamics.solvePVT(step, state.system)
+    var previousStepIndex = _getPreviousIndex(index, state)
+    var previousStep = state.steps[previousStepIndex]
+    var previousStepConstrained = _applyStepTypeConstraintsToPreviousPoint(previousStep, step)
+    if (previousStepConstrained === previousStep) {
+        return [{
+            ...state, steps: _steps_replaceAtIndex(state.steps, index, step)
+        }, true]
+    }
+
+    previousStep = Thermodynamics.solvePVT(previousStepConstrained, state.system)
+
+    return [{
+        ...state, steps: _steps_replaceAtIndex(
+            _steps_replaceAtIndex(state.steps, previousStepIndex, previousStep),
+            index, step)
+    }, false]
+}
 const steps_update = (state,action) => {
     
     state = {...state, steps: _steps_replaceAtIndex(
@@ -50,26 +70,7 @@ const steps_update = (state,action) => {
 
     state = _operateOnPreviousUntilCondition(
         state,startIndex,
-        (state,index)=>{
-            var step = state.steps[index]
-            step = Thermodynamics.solvePVT(step, state.system)
-            var previousStepIndex = _getPreviousIndex(index, state)
-            var previousStep = state.steps[previousStepIndex]
-            var stepConstrained = _applyStepTypeConstraintsToPreviousPoint(previousStep, step)
-            if (stepConstrained === step) {
-                return [{
-                    ...state, steps: _steps_replaceAtIndex(state.steps, index, step)
-                }, true]
-            }
-            
-            step = Thermodynamics.solvePVT(stepConstrained, state.system)
-            
-            return [{
-                ...state, steps: _steps_replaceAtIndex(
-                    _steps_replaceAtIndex(state.steps, previousStepIndex, previousStep),
-                    index, step)
-            }, false]
-        },
+        _applyPreviousPointConstraintsAtIndex,
         _generateNotReturnedToStartOrBreakSignalCondition(startIndex)
     )
 
@@ -184,9 +185,9 @@ function _applyStepTypeConstraintsToNextPoint(step, nextStep) {
 
 function _applyStepTypeConstraintsToPreviousPoint(previousStep, step) {
     if (previousStep.type === 'isobaric' && previousStep.pressure !== step.pressure) {
-        step = { ...step, pressure: step.pressure, temperature: undefined }
+        previousStep = { ...previousStep, pressure: step.pressure, temperature: undefined }
     }
-    return step
+    return previousStep
 }
 
 function _markUndefinedOneUnspecifiedPvtParameter(action) {
@@ -198,7 +199,6 @@ function _markUndefinedOneUnspecifiedPvtParameter(action) {
         return action
     }
     const [hasT, hasV, hasP] = Thermodynamics.flagsForKeysInPoint(action.newProperties)
-    console.log(hasT, hasV, hasP)
     const numberOfConstraints = hasT + hasV + hasP
     if (numberOfConstraints === 2) {
         for (key in ['volume', 'temperature', 'pressure']) {

@@ -192,4 +192,5 @@ describe('App state - tests',()=>{
         const resState = store.getState()
         expect(resState.steps[0].pressure).toBeCloseTo(11000)
     })
+    
 })
