@@ -1,5 +1,5 @@
 import React from 'react';
-import StepListItem from './StepListItem';
+import StepList from './StepList';
 
 const App = () => {
     
@@ -13,7 +13,7 @@ const App = () => {
 
                 </canvas>
             </div>
-            <StepListItem />
+            <StepList />
         </div>
     )
 }

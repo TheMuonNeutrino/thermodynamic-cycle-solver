@@ -3,7 +3,8 @@ import ParameterField from './ParameterField';
 import { Form } from 'semantic-ui-react';
 import './StepListItem.css';
 
-const DropDown = () => {
+const DropDown = ({value,setValue}) => {
+
     const dropdownOptions = [
         {key: 'none', text:'(None)', value: 'none'},
         {key: 'isobaric', text:'Isobaric', value:'isobaric'},
@@ -13,17 +14,27 @@ const DropDown = () => {
     ]
 
     return(
-        <Form.Dropdown search selection options={dropdownOptions} label='Step Type' />
+        <Form.Dropdown 
+            search selection 
+            options={dropdownOptions} 
+            label='Step Type' 
+            onChange={(e,data)=>{setValue(data.value)}}
+            value={value}
+        />
     )
 }
 
-const StepListItem = (step,index) => {
+const StepListItem = ({step,index,setStep}) => {
 
-    const pointUpdateFunction = () =>{
-
+    const stepUpdateFunction = (param) =>{
+        for (const key in param){
+            if (key !== 'type'){
+                param[key] = parseFloat(param[key])
+                if ( isNaN(param[key])){return null}
+            }
+        }
+        setStep(index,param)
     }
-
-    var entropyChange = 5
 
     const firstLinefieldProperties = [
         {
@@ -55,18 +66,21 @@ const StepListItem = (step,index) => {
                             value={step[item.key]}
                             key={item.label}
                             readOnly={item.readOnly}
-                            updateValue={pointUpdateFunction}
+                            updateValue={stepUpdateFunction}
                             updateKey={item.key}
                         />
                     )})}
                 </div>
                 <div className='fields'>
                     <div className='step-list-dropdown-wrapper'>
-                        <DropDown />
+                        <DropDown 
+                            value={step.type}
+                            setValue={(value)=>{stepUpdateFunction({type: value})}}
+                        />
                     </div>
                     <ParameterField
                         label='Entropy Change'
-                        value={entropyChange}
+                        value={step.entropyChange}
                         key='entropyChange'
                         readOnly={true}
                     />

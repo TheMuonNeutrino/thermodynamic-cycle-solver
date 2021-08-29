@@ -2,7 +2,7 @@ import React from 'react';
 import './ParameterField.css';
 
 const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
-    var onChangeParam = ''
+    var onChangeParam = ()=>{}
     if (!readOnly){
         onChangeParam = (event) => {
             var pointChanges = {}
@@ -11,14 +11,26 @@ const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
         }
     }
 
+    var [localValue, setLocalValue] = React.useState(value)
+
+    const updateLocalValue = (value) => {
+        if (value === ''){
+            setLocalValue('')
+        }else{
+            setLocalValue(parseFloat(localValue))
+        }
+    }
+
     return(
         <div className='field parameter-field'>
             <label className='parameter-field-label'>{label}</label>
             <input 
+                type='text'
                 className='parameter-field-value' 
-                value={value} 
+                value={localValue} 
                 readOnly={readOnly}
-                onChange={onChangeParam}
+                onBlur={onChangeParam}
+                onChange={(e)=>{updateLocalValue(e.target.value)}}
             />
         </div>
     )

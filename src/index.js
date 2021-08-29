@@ -1,10 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './components/App.js'
+import {Provider} from 'react-redux'
+import {createStore} from 'redux'
+import thermodynamicSystemReducer from './reducers'
 
 ReactDOM.render(
-  <React.StrictMode>
+  <Provider store={createStore(thermodynamicSystemReducer)}>
     <App />
-  </React.StrictMode>,
+  </Provider>
+    ,
   document.getElementById('root')
 );

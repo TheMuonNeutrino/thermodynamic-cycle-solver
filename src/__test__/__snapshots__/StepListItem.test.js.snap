@@ -1,42 +1,240 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`StepListItem tests should render StepListItem 1`] = `
-Array [
+exports[`StepList tests should render StepList 1`] = `
+<div
+  className="ui container"
+>
   <div
-    className="ui container"
+    className="ui large form"
   >
     <div
-      className="ui large form"
+      className="fields"
     >
       <div
-        className="four fields"
+        className="field parameter-field"
       >
-        <ParameterField
-          label="Pressure"
+        <label
+          className="parameter-field-label"
+        >
+          Pressure
+        </label>
+        <input
+          className="parameter-field-value"
+          onChange={[Function]}
           readOnly={false}
-          updateKey="pressure"
-          updateValue={[Function]}
+          value={1000000}
         />
-        <ParameterField
-          label="Volume"
+      </div>
+      <div
+        className="field parameter-field"
+      >
+        <label
+          className="parameter-field-label"
+        >
+          Volume
+        </label>
+        <input
+          className="parameter-field-value"
+          onChange={[Function]}
           readOnly={false}
-          updateKey="volume"
-          updateValue={[Function]}
+          value={5}
         />
-        <ParameterField
-          label="Temperature"
+      </div>
+      <div
+        className="field parameter-field"
+      >
+        <label
+          className="parameter-field-label"
+        >
+          Temperature
+        </label>
+        <input
+          className="parameter-field-value"
+          onChange={[Function]}
           readOnly={false}
-          updateKey="temperature"
-          updateValue={[Function]}
+          value={100}
         />
-        <ParameterField
-          label="Entropy"
+      </div>
+      <div
+        className="field parameter-field"
+      >
+        <label
+          className="parameter-field-label"
+        >
+          Entropy
+        </label>
+        <input
+          className="parameter-field-value"
+          onChange={[Function]}
           readOnly={true}
-          updateKey="entropy"
-          updateValue={[Function]}
         />
       </div>
     </div>
-  </div>,
-]
+    <div
+      className="fields"
+    >
+      <div
+        className="step-list-dropdown-wrapper"
+      >
+        <div
+          className="field"
+        >
+          <label>
+            Step Type
+          </label>
+          <div
+            aria-describedby={null}
+            aria-expanded={false}
+            className="ui search selection dropdown"
+            onBlur={[Function]}
+            onChange={[Function]}
+            onClick={[Function]}
+            onFocus={[Function]}
+            onKeyDown={[Function]}
+            onMouseDown={[Function]}
+            role="combobox"
+          >
+            <input
+              aria-autocomplete="list"
+              autoComplete="off"
+              className="search"
+              onChange={[Function]}
+              style={
+                Object {
+                  "width": undefined,
+                }
+              }
+              tabIndex={0}
+              type="text"
+              value=""
+            />
+            <div
+              aria-atomic={true}
+              aria-live="polite"
+              className="divider text"
+              role="alert"
+            >
+              Isobaric
+            </div>
+            <i
+              aria-hidden="true"
+              className="dropdown icon"
+              onClick={[Function]}
+            />
+            <div
+              className="menu transition"
+              role="listbox"
+            >
+              <div
+                aria-checked={false}
+                aria-selected={false}
+                className="item"
+                onClick={[Function]}
+                role="option"
+                style={
+                  Object {
+                    "pointerEvents": "all",
+                  }
+                }
+              >
+                <span
+                  className="text"
+                >
+                  (None)
+                </span>
+              </div>
+              <div
+                aria-checked={true}
+                aria-selected={true}
+                className="active selected item"
+                onClick={[Function]}
+                role="option"
+                style={
+                  Object {
+                    "pointerEvents": "all",
+                  }
+                }
+              >
+                <span
+                  className="text"
+                >
+                  Isobaric
+                </span>
+              </div>
+              <div
+                aria-checked={false}
+                aria-selected={false}
+                className="item"
+                onClick={[Function]}
+                role="option"
+                style={
+                  Object {
+                    "pointerEvents": "all",
+                  }
+                }
+              >
+                <span
+                  className="text"
+                >
+                  Isochoric
+                </span>
+              </div>
+              <div
+                aria-checked={false}
+                aria-selected={false}
+                className="item"
+                onClick={[Function]}
+                role="option"
+                style={
+                  Object {
+                    "pointerEvents": "all",
+                  }
+                }
+              >
+                <span
+                  className="text"
+                >
+                  Isothermal
+                </span>
+              </div>
+              <div
+                aria-checked={false}
+                aria-selected={false}
+                className="item"
+                onClick={[Function]}
+                role="option"
+                style={
+                  Object {
+                    "pointerEvents": "all",
+                  }
+                }
+              >
+                <span
+                  className="text"
+                >
+                  Isentropic
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        className="field parameter-field"
+      >
+        <label
+          className="parameter-field-label"
+        >
+          Entropy Change
+        </label>
+        <input
+          className="parameter-field-value"
+          onChange={[Function]}
+          readOnly={true}
+          value={300}
+        />
+      </div>
+    </div>
+  </div>
+</div>
 `;

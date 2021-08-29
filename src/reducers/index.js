@@ -258,7 +258,7 @@ function _markUndefinedOneUnspecifiedPvtParameter(action) {
     const [hasT, hasV, hasP] = Thermodynamics.flagsForKeysInPoint(action.newProperties)
     const numberOfConstraints = hasT + hasV + hasP
     if (numberOfConstraints === 2) {
-        for (key in ['volume', 'temperature', 'pressure']) {
+        for (var key in ['volume', 'temperature', 'pressure']) {
             if (!hasDefinedKey(action.newProperties,key)) {
                 action.newProperties[key] = undefined
             }
