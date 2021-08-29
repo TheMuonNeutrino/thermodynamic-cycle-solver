@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ParameterField from './ParameterField';
-import { Form } from 'semantic-ui-react';
+import { Button, Form } from 'semantic-ui-react';
 import './StepListItem.css';
 import { hasDefinedKey } from '../Utils';
 
@@ -21,11 +21,12 @@ const DropDown = ({value,setValue}) => {
             label='Step Type' 
             onChange={(e,data)=>{setValue(data.value)}}
             value={value}
+            className='no-drag'
         />
     )
 }
 
-const StepListItem = ({step,index,setStep}) => {
+const StepListItem = ({step,index,setStep,deleteStep,deleteDisabled}) => {
 
     var entropyReadOnly = true
 
@@ -44,6 +45,22 @@ const StepListItem = ({step,index,setStep}) => {
     const stepUpdateFunction = (param) =>{
         setStep(index,param)
     }
+
+    var deleteButtonParams = {
+        size: 'small',
+        icon: 'trash',
+        onClick: ()=>{deleteStep(index)},
+        className: 'no-drag',
+    }
+
+    if (deleteDisabled){
+        deleteButtonParams.disabled = true
+    }else{
+        deleteButtonParams.negative = true
+    }
+
+    console.log(deleteDisabled,deleteButtonParams)
+    
 
     const firstLinefieldProperties = [
         {
@@ -84,7 +101,12 @@ const StepListItem = ({step,index,setStep}) => {
         <div className='ui container'>
             <div className='ui large form'>
                 <div>
-                    <h4 className='item-title'><i>Point {numToSSColumn(index+1)}</i></h4>
+                    <h4 className='item-title'>
+                        <i className='pad-right'>Point {numToSSColumn(index+1)}</i>
+                        <Button 
+                            {...deleteButtonParams}
+                        ></Button>
+                    </h4>
                 </div>
                 <div className='fields'>
                     {firstLinefieldProperties.map((item)=>{return(

@@ -100,10 +100,13 @@ const steps_add = (steps,system,index,newStep) => {
 }
 
 const steps_delete = (steps,index) => {
-    return([
-        ...steps.slice(0,index),
-        ...steps.slice(index+1)
-    ])
+    if (steps.length > 1){
+        return([
+            ...steps.slice(0,index),
+            ...steps.slice(index+1)
+        ])
+    }
+    return steps
 }
 
 const thermodynamicSystemReducer = (state=initialState,action) =>{
@@ -123,25 +126,37 @@ const thermodynamicSystemReducer = (state=initialState,action) =>{
     if (action.type === 'steps/add'){return {...state,
         steps: steps_add(state.steps,state.system,action.index,action.newStep)
     }}
-    if (action.type === 'steps/delete'){return {...state,
-        steps: steps_delete(state.steps,action.index)
-    }}
+    if (action.type === 'steps/delete'){
+        state = {...state,
+            steps: steps_delete(state.steps,action.index)
+        }
+        return _updateAllSteps(state)
+    }
     if (action.type === 'system/setMoles'){
         var newState = {...state, system: {...state.system, moles: action.moles}}
         newState = _forEachStep(newState,_recalculateTemperatureAtIndex)
-        newState = _forEachStep(newState,
-            (state,index)=>{
-                return steps_update(
-                    state, {index: index, newStep: state.steps[index]}
-                )
-            }
-        )
+        newState = _updateAllSteps(newState)
         return newState
+    }
+    if (action.type === 'steps/reorder'){
+        console.log(action.newOrder)
+        state = {...state, steps: action.newOrder}
+        return _updateAllSteps(state)
     }
     return state
 }
 
 export default thermodynamicSystemReducer
+
+function _updateAllSteps(newState) {
+    return _forEachStep(newState,
+        (state, index) => {
+            return steps_update(
+                state, { index: index, newStep: state.steps[index] }
+            )
+        }
+    )
+}
 
 function checkStepTypeIsValid(newStep) {
     if (hasDefinedKey(newStep, 'type')) {

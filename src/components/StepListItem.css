@@ -6,3 +6,16 @@
 .item-title{
     margin-bottom: 0.3em !important;
 }
+
+.container {
+	cursor: move;
+	cursor: -webkit-grabbing;
+}
+
+.selected-list-item {
+    background-color: rgb(178, 188, 224) !important;
+}
+
+.pad-right {
+    padding-right: 1em;
+}

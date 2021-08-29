@@ -35,3 +35,10 @@ export const system_setMoles = (moles) => {
         moles: moles,
     }
 }
+
+export const steps_reorder = (newOrder) => {
+    return{
+        type: 'steps/reorder',
+        newOrder: newOrder,
+    }
+}

@@ -34,7 +34,7 @@ const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
     useEffect(()=>{
         var timeoutRef = setTimeout(()=>{
             onChangeParam()
-        },200)
+        },500)
         return(()=>{
             clearTimeout(timeoutRef)
         })
@@ -45,7 +45,7 @@ const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
             <label className='parameter-field-label'>{label}</label>
             <input 
                 type='text'
-                className='parameter-field-value' 
+                className='parameter-field-value no-drag' 
                 value={localValue} 
                 readOnly={readOnly}
                 onBlur={onChangeParam}
