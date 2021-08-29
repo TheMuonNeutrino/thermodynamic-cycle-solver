@@ -4,7 +4,7 @@ import StepListItem from '../components/StepListItem';
 import {createSerializer} from 'enzyme-to-json';
 expect.addSnapshotSerializer(createSerializer({mode: 'deep'}));
 
-describe('StepList tests',()=>{
+describe.skip('StepList tests',()=>{
     var step, index, setStep, wrapper
     beforeEach(()=>{
         step = {

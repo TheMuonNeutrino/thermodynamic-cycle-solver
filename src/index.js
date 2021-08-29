@@ -5,8 +5,10 @@ import {Provider} from 'react-redux'
 import {createStore} from 'redux'
 import thermodynamicSystemReducer from './reducers'
 
+const store = createStore(thermodynamicSystemReducer)
+
 ReactDOM.render(
-  <Provider store={createStore(thermodynamicSystemReducer)}>
+  <Provider store={store}>
     <App />
   </Provider>
     ,

@@ -2,7 +2,7 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import ParameterField from "../components/ParameterField";
 
-describe('ParameterField tests',()=>{
+describe.skip('ParameterField tests',()=>{
     var value, onValueChange, component
     beforeEach(()=>{
         value = 0

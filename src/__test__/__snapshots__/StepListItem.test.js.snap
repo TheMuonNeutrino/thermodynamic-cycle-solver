@@ -20,8 +20,11 @@ exports[`StepList tests should render StepList 1`] = `
         </label>
         <input
           className="parameter-field-value"
+          disabled={false}
+          onBlur={[Function]}
           onChange={[Function]}
           readOnly={false}
+          type="text"
           value={1000000}
         />
       </div>
@@ -35,8 +38,11 @@ exports[`StepList tests should render StepList 1`] = `
         </label>
         <input
           className="parameter-field-value"
+          disabled={false}
+          onBlur={[Function]}
           onChange={[Function]}
           readOnly={false}
+          type="text"
           value={5}
         />
       </div>
@@ -50,8 +56,11 @@ exports[`StepList tests should render StepList 1`] = `
         </label>
         <input
           className="parameter-field-value"
+          disabled={false}
+          onBlur={[Function]}
           onChange={[Function]}
           readOnly={false}
+          type="text"
           value={100}
         />
       </div>
@@ -65,8 +74,12 @@ exports[`StepList tests should render StepList 1`] = `
         </label>
         <input
           className="parameter-field-value"
+          disabled={false}
+          onBlur={[Function]}
           onChange={[Function]}
-          readOnly={true}
+          readOnly={false}
+          type="text"
+          value={5}
         />
       </div>
     </div>
@@ -229,8 +242,11 @@ exports[`StepList tests should render StepList 1`] = `
         </label>
         <input
           className="parameter-field-value"
+          disabled={true}
+          onBlur={[Function]}
           onChange={[Function]}
           readOnly={true}
+          type="text"
           value={300}
         />
       </div>

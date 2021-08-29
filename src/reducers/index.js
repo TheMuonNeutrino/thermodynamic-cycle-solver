@@ -188,62 +188,98 @@ function _getStepEntropy(step) {
 }
 
 function _applyStepTypeConstraintsToSubsequentPoint(
-        step,subsequentStep,refStep,secondRefStep,system
+        step,subStep,subsubStep,refStep,secondRefStep,system
     ){
-    if (refStep.type === 'isobaric' && step.pressure !== subsequentStep.pressure) {
-        subsequentStep = {...subsequentStep,  pressure: step.pressure}
+    if (refStep.type === 'isobaric' && step.pressure !== subStep.pressure) {
+        subStep = {...subStep,  pressure: step.pressure}
         if (['none','isobaric','isochoric'].includes(secondRefStep.type)){
-            subsequentStep.temperature = undefined
+            subStep.temperature = undefined
         }
-        if (secondRefStep.type === 'isothermal'){subsequentStep.volume = undefined}
+        if (secondRefStep.type === 'isothermal'){subStep.volume = undefined}
+        subStep = _applyConstraintsFromIsentropicAsNeighbour(secondRefStep,subsubStep, subStep, system,
+            {pressure_2: subStep.pressure}    
+        )
     }
-    if (refStep.type === 'isochoric' && step.volume !== subsequentStep.volume){
-        subsequentStep = {...subsequentStep, volume: step.volume}
+    if (refStep.type === 'isochoric' && step.volume !== subStep.volume){
+        subStep = {...subStep, volume: step.volume}
         if (['none','isobaric','isochoric'].includes(secondRefStep.type)){
-            subsequentStep.temperature = undefined
+            subStep.temperature = undefined
         }
-        if (secondRefStep.type === 'isothermal'){subsequentStep.pressure = undefined}
+        if (secondRefStep.type === 'isothermal'){subStep.pressure = undefined}
+        subStep = _applyConstraintsFromIsentropicAsNeighbour(secondRefStep,subsubStep, subStep, system,
+            {volume_2: subStep.volume}    
+        )
     }
-    if (refStep.type === 'isothermal' && step.temperature !== subsequentStep.temperature){
-        subsequentStep = {...subsequentStep, temperature: step.temperature}
+    if (refStep.type === 'isothermal' && step.temperature !== subStep.temperature){
+        subStep = {...subStep, temperature: step.temperature}
         if (['none','isobaric','isothermal'].includes(secondRefStep.type)){
-            subsequentStep.volume = undefined
+            subStep.volume = undefined
         }
-        if (secondRefStep.type === 'isochoric'){subsequentStep.pressure = undefined}
+        if (secondRefStep.type === 'isochoric'){subStep.pressure = undefined}
+        subStep = _applyConstraintsFromIsentropicAsNeighbour(secondRefStep,subsubStep, subStep, system,
+            {temperature_2: subStep.temperature}    
+        )
     }
     if (refStep.type === 'isentropic'){
-        const stepEntropyConstraints = {
-            entropyChange: 0,
+        var entropyChangeBefore = Thermodynamics.solveEntropyChange({
             volume_1: step.volume,
-            pressure_1:step.pressure,
-        }
-        if (['none','isentropic','isothermal'].includes(secondRefStep.type)){
-            stepEntropyConstraints.temperature_2 = subsequentStep.temperature
-        }
-        if (secondRefStep.type === 'isobaric'){
-            stepEntropyConstraints.pressure_2 = subsequentStep.pressure
-        }
-        if (secondRefStep.type === 'isochoric'){
-            stepEntropyConstraints.volume_2 = subsequentStep.volume
-        }
+            volume_2: subStep.volume,
+            pressure_1: step.pressure,
+            pressure_2: subStep.pressure,
+        },system).entropyChange
+        if (
+            Math.abs(entropyChangeBefore) > 0.000005
+        ){
+            const stepEntropyConstraints = {
+                entropyChange: 0,
+                volume_1: step.volume,
+                pressure_1:step.pressure,
+            }
+            if (['none','isentropic','isothermal'].includes(secondRefStep.type)){
+                stepEntropyConstraints.temperature_2 = subStep.temperature
+            }
+            if (secondRefStep.type === 'isobaric'){
+                stepEntropyConstraints.pressure_2 = subStep.pressure
+            }
+            if (secondRefStep.type === 'isochoric'){
+                stepEntropyConstraints.volume_2 = subStep.volume
+            }
 
-        const stepSolution = Thermodynamics.solveEntropyChange(stepEntropyConstraints,system)
-        subsequentStep = {...subsequentStep,
-            pressure: stepSolution.pressure_2, 
-            volume: stepSolution.volume_2,
-            temperature: stepSolution.temperature_2,
+            const stepSolution = Thermodynamics.solveEntropyChange(stepEntropyConstraints,system)
+            subStep = {...subStep,
+                pressure: stepSolution.pressure_2, 
+                volume: stepSolution.volume_2,
+                temperature: stepSolution.temperature_2,
+            }
         }
     }
-    return subsequentStep
+    return subStep
+}
+
+function _applyConstraintsFromIsentropicAsNeighbour(secondRefStep,subsubStep, subStep, system, constraint) {
+    if (secondRefStep.type === 'isentropic'){
+        var entropyStepConstraints = {
+            ...constraint,
+            volume_1: subsubStep.volume,
+            pressure_1: subsubStep.pressure,
+            entropyChange: 0
+        }
+        var entropyStepRes = Thermodynamics.solveEntropyChange(entropyStepConstraints, system)
+        subStep = {...subStep,pressure: undefined}
+        subStep.pressure = entropyStepRes.pressure_2
+        subStep.temperature = entropyStepRes.temperature_2
+        subStep.volume = entropyStepRes.volume_2
+    }
+    return subStep
 }
 
 function _applyStepTypeConstraintsToNextPoint(step, nextStep,nextNextStep,system) {
-    return _applyStepTypeConstraintsToSubsequentPoint(step,nextStep,step,nextStep,system)
+    return _applyStepTypeConstraintsToSubsequentPoint(step,nextStep,nextNextStep,step,nextStep,system)
 }
 
 function _applyStepTypeConstraintsToPreviousPoint(step, previousStep,previousPreviousStep,system) {
     return _applyStepTypeConstraintsToSubsequentPoint(
-        step,previousStep,previousStep,previousPreviousStep,system
+        step,previousStep,previousPreviousStep,previousStep,previousPreviousStep,system
     )
 }
 
@@ -258,11 +294,11 @@ function _markUndefinedOneUnspecifiedPvtParameter(action) {
     const [hasT, hasV, hasP] = Thermodynamics.flagsForKeysInPoint(action.newProperties)
     const numberOfConstraints = hasT + hasV + hasP
     if (numberOfConstraints === 2) {
-        for (var key in ['volume', 'temperature', 'pressure']) {
+        ['volume', 'temperature', 'pressure'].forEach((key) => {
             if (!hasDefinedKey(action.newProperties,key)) {
                 action.newProperties[key] = undefined
             }
-        }
+        })
     }
     if (numberOfConstraints === 1) {
         if (!hasT) {

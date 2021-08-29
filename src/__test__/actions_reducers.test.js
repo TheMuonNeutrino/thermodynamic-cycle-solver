@@ -350,3 +350,71 @@ describe('App state - Isentropic step logic',()=>{
         expect(resState.steps[2].volume).toBeCloseTo(2)
     })
 })
+describe('App state - Isentropic as secondRefStep',()=>{
+    var store = createStore(thermodynamicSystemReducer)
+    var firstStep = {
+        pressure: 10000,
+        volume: 1,
+        type: 'isobaric',
+        staticEntropy: 0
+    }
+    var secondStep = {
+        pressure: 10000,
+        volume: 1.2,
+        type: 'isochoric',
+    }
+    var thirdStep = {
+        pressure: 7747,
+        volume: 1.2,
+        type: 'isentropic',
+    }
+    secondStep = Thermodynamics.solvePVT(secondStep,store.getState().system)
+    thirdStep = Thermodynamics.solvePVT(thirdStep,store.getState().system)
+    beforeEach(()=>{
+        store = createStore(thermodynamicSystemReducer)
+        store.dispatch(steps_add(-1,secondStep))
+        store.dispatch(steps_add(-1,thirdStep))
+        store.dispatch(steps_updateProperties(0,firstStep))
+    })
+    it('parses update to isochoric followed by isentropic',()=>{
+        var entropyBefore = store.getState().steps[2].entropy
+        store.dispatch(steps_updateProperties(1,{volume: 2}))
+        var entropyAfter = store.getState().steps[2].entropy
+        expect(entropyAfter).toBeCloseTo(entropyBefore)
+        expect(store.getState().steps[0].staticEntropy).toBeCloseTo(entropyBefore)
+    })
+    it('parses update to isobaric followed by isentropic',()=>{
+        store = createStore(thermodynamicSystemReducer,{
+            system: {moles: 1, isochoricHeatCapacity: 20},
+            steps: [
+                firstStep,
+                {...thirdStep, pressure: firstStep.pressure},
+                {...thirdStep, pressure: thirdStep.pressure + 10000, type: 'none'}
+            ]
+        })
+        store.dispatch(steps_updateProperties(0,{}))
+        const beforeState = store.getState()
+        store.dispatch(steps_updateProperties(0,{pressure: 9000}))
+        const resState = store.getState()
+        expect(resState.steps[1].entropyChange).toBeCloseTo(0)
+        expect(resState.steps[2].volume).toBeCloseTo(beforeState.steps[2].volume)
+        expect(resState.steps[2].pressure).toBeCloseTo(beforeState.steps[2].pressure)
+    })
+    it('parses update to isothermal followed by isentropic',()=>{
+        store = createStore(thermodynamicSystemReducer,{
+            system: {moles: 1, isochoricHeatCapacity: 20},
+            steps: [
+                {...firstStep, type:'isothermal'},
+                {...thirdStep, pressure: firstStep.pressure},
+                {...thirdStep, pressure: thirdStep.pressure + 10000, type: 'none'}
+            ]
+        })
+        store.dispatch(steps_updateProperties(0,{}))
+        const beforeState = store.getState()
+        store.dispatch(steps_updateProperties(0,{pressure: 9000}))
+        const resState = store.getState()
+        expect(resState.steps[1].entropyChange).toBeCloseTo(0)
+        expect(resState.steps[2].volume).toBeCloseTo(beforeState.steps[2].volume)
+        expect(resState.steps[2].pressure).toBeCloseTo(beforeState.steps[2].pressure)
+    })
+})

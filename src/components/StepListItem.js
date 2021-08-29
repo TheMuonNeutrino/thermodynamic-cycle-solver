@@ -2,6 +2,7 @@ import React from 'react';
 import ParameterField from './ParameterField';
 import { Form } from 'semantic-ui-react';
 import './StepListItem.css';
+import { hasDefinedKey } from '../Utils';
 
 const DropDown = ({value,setValue}) => {
 
@@ -26,13 +27,21 @@ const DropDown = ({value,setValue}) => {
 
 const StepListItem = ({step,index,setStep}) => {
 
+    var entropyReadOnly = true
+
+    if (hasDefinedKey(step,'staticEntropy')){
+        step.entropy = step.staticEntropy
+        entropyReadOnly = false
+    }
+    if (!hasDefinedKey(step,'entropy')){
+        step.entropy = ''
+    }
+
+    if (!hasDefinedKey(step,'entropyChange')){
+        step.entropyChange = ''
+    }
+
     const stepUpdateFunction = (param) =>{
-        for (const key in param){
-            if (key !== 'type'){
-                param[key] = parseFloat(param[key])
-                if ( isNaN(param[key])){return null}
-            }
-        }
         setStep(index,param)
     }
 
@@ -41,24 +50,42 @@ const StepListItem = ({step,index,setStep}) => {
             label: 'Pressure',
             key: 'pressure',
             readOnly: false,
+            updateKey: 'pressure',
         },{
             label: 'Volume',
             key: 'volume',
             readOnly: false,
+            updateKey: 'volume',
         },{
             label: 'Temperature',
             key: 'temperature',
-            readOnly: false
+            readOnly: false,
+            updateKey: 'temperature',
         },{
             label: 'Entropy',
             key: 'entropy',
-            readOnly: true
+            readOnly: entropyReadOnly,
+            updateKey: 'staticEntropy'
         }
     ]
+
+    function numToSSColumn(num){
+        let s = '', t;
+      
+        while (num > 0) {
+          t = (num - 1) % 26;
+          s = String.fromCharCode(65 + t) + s;
+          num = (num - t)/26 | 0;
+        }
+        return s || undefined;
+      }
 
     return(
         <div className='ui container'>
             <div className='ui large form'>
+                <div>
+                    <h4 className='item-title'><i>Point {numToSSColumn(index+1)}</i></h4>
+                </div>
                 <div className='fields'>
                     {firstLinefieldProperties.map((item)=>{return(
                         <ParameterField 
@@ -67,7 +94,7 @@ const StepListItem = ({step,index,setStep}) => {
                             key={item.label}
                             readOnly={item.readOnly}
                             updateValue={stepUpdateFunction}
-                            updateKey={item.key}
+                            updateKey={item.updateKey}
                         />
                     )})}
                 </div>
@@ -83,8 +110,11 @@ const StepListItem = ({step,index,setStep}) => {
                         value={step.entropyChange}
                         key='entropyChange'
                         readOnly={true}
+                        updateKey='entropyChange'
+                        updateValue={stepUpdateFunction}
                     />
                 </div>
+                <hr/>
             </div>
         </div>
     )

@@ -1,25 +1,44 @@
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import './ParameterField.css';
 
 const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
-    var onChangeParam = ()=>{}
-    if (!readOnly){
-        onChangeParam = (event) => {
-            var pointChanges = {}
-            pointChanges[updateKey] = event.target.value
-            updateValue(pointChanges)
-        }
-    }
 
     var [localValue, setLocalValue] = React.useState(value)
 
-    const updateLocalValue = (value) => {
-        if (value === ''){
-            setLocalValue('')
-        }else{
-            setLocalValue(parseFloat(localValue))
+    var updateLocalValue = () => {}
+    if (!readOnly){
+        updateLocalValue = (value) => {
+            if (value === ''){
+                setLocalValue('')
+            }else{
+                const newVal = parseFloat(value)
+                if (!isNaN(newVal)){
+                    setLocalValue(newVal)
+                }
+            }
         }
     }
+
+    const onChangeParam = useCallback(() => {
+        if (localValue !== '' && localValue !== value){
+            var pointChanges = {}
+            pointChanges[updateKey] = localValue
+            updateValue(pointChanges)
+        }
+    },[localValue,updateValue,updateKey,value])
+
+    useEffect(()=>{
+        setLocalValue(value)
+    },[value])
+
+    useEffect(()=>{
+        var timeoutRef = setTimeout(()=>{
+            onChangeParam()
+        },200)
+        return(()=>{
+            clearTimeout(timeoutRef)
+        })
+    },[localValue,onChangeParam])
 
     return(
         <div className='field parameter-field'>
@@ -31,6 +50,7 @@ const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
                 readOnly={readOnly}
                 onBlur={onChangeParam}
                 onChange={(e)=>{updateLocalValue(e.target.value)}}
+                disabled={readOnly}
             />
         </div>
     )
