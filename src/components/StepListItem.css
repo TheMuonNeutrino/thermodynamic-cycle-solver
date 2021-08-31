@@ -19,3 +19,7 @@
 .pad-right {
     padding-right: 1em;
 }
+
+.button-fill-height {
+    height: 100%;
+}

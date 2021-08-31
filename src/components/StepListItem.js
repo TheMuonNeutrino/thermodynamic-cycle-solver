@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import ParameterField from './ParameterField';
 import { Button, Form } from 'semantic-ui-react';
 import './StepListItem.css';
 import { hasDefinedKey } from '../Utils';
+import { numToSSColumn } from '../Utils';
 
 const DropDown = ({value,setValue}) => {
 
@@ -59,43 +60,29 @@ const StepListItem = ({step,index,setStep,deleteStep,deleteDisabled}) => {
         deleteButtonParams.negative = true
     }
 
-    console.log(deleteDisabled,deleteButtonParams)
-    
-
     const firstLinefieldProperties = [
         {
-            label: 'Pressure',
+            label: 'Pressure (Pa)',
             key: 'pressure',
             readOnly: false,
             updateKey: 'pressure',
         },{
-            label: 'Volume',
+            label: 'Volume (m^3)',
             key: 'volume',
             readOnly: false,
             updateKey: 'volume',
         },{
-            label: 'Temperature',
+            label: 'Temperature (K)',
             key: 'temperature',
             readOnly: false,
             updateKey: 'temperature',
         },{
-            label: 'Entropy',
+            label: 'Entropy (J/K)',
             key: 'entropy',
             readOnly: entropyReadOnly,
             updateKey: 'staticEntropy'
         }
     ]
-
-    function numToSSColumn(num){
-        let s = '', t;
-      
-        while (num > 0) {
-          t = (num - 1) % 26;
-          s = String.fromCharCode(65 + t) + s;
-          num = (num - t)/26 | 0;
-        }
-        return s || undefined;
-      }
 
     return(
         <div className='ui container'>
@@ -128,7 +115,7 @@ const StepListItem = ({step,index,setStep,deleteStep,deleteDisabled}) => {
                         />
                     </div>
                     <ParameterField
-                        label='Entropy Change'
+                        label='Entropy Change (J/K)'
                         value={step.entropyChange}
                         key='entropyChange'
                         readOnly={true}

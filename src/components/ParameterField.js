@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import './ParameterField.css';
 
-const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
+const ParameterField = ({label,value,readOnly,updateValue,updateKey,text}) =>{
 
     var [localValue, setLocalValue] = React.useState(value)
 
@@ -11,19 +11,25 @@ const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
             if (value === ''){
                 setLocalValue('')
             }else{
-                const newVal = parseFloat(value)
-                if (!isNaN(newVal)){
-                    setLocalValue(newVal)
-                }
+                setLocalValue(value)
             }
         }
     }
 
     const onChangeParam = useCallback(() => {
         if (localValue !== '' && localValue !== value){
+            var newVal = parseFloat(localValue)
             var pointChanges = {}
-            pointChanges[updateKey] = localValue
-            updateValue(pointChanges)
+            pointChanges[updateKey] = newVal
+            const zeroCheck = (
+                ['pressure','volume','temperature','moles'].includes(updateKey) && newVal === 0
+            )
+            if (!isNaN(newVal) && !zeroCheck){
+                updateValue(pointChanges)
+            }else{
+                setLocalValue(value)
+            }
+            
         }
     },[localValue,updateValue,updateKey,value])
 
@@ -45,7 +51,7 @@ const ParameterField = ({label,value,readOnly,updateValue,updateKey}) =>{
             <label className='parameter-field-label'>{label}</label>
             <input 
                 type='text'
-                className='parameter-field-value no-drag' 
+                className={`parameter-field-value no-drag parameter-${updateKey}`} 
                 value={localValue} 
                 readOnly={readOnly}
                 onBlur={onChangeParam}

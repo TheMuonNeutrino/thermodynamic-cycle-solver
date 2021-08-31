@@ -1,5 +1,6 @@
 import Thermodynamics from "../Thermodynamics"
 import { hasDefinedKey, hasUndefinedKey } from "../Utils"
+import { getPreviousIndex, getNextIndex } from "../Utils"
 
 const initialState = {
     system:{
@@ -42,13 +43,13 @@ const _applySubsequentPointConstraintsAtIndex = (
 
 const _applyNextPointConstraintsAtIndex = (state, index) => {
     return _applySubsequentPointConstraintsAtIndex(
-        state,index,_applyStepTypeConstraintsToNextPoint,_getNextIndex
+        state,index,_applyStepTypeConstraintsToNextPoint,getNextIndex
     )
 }
 
 const _applyPreviousPointConstraintsAtIndex = (state, index) => {
     return _applySubsequentPointConstraintsAtIndex(
-        state,index,_applyStepTypeConstraintsToPreviousPoint,_getPreviousIndex
+        state,index,_applyStepTypeConstraintsToPreviousPoint,getPreviousIndex
     )
 }
 const steps_update = (state,action) => {
@@ -132,15 +133,14 @@ const thermodynamicSystemReducer = (state=initialState,action) =>{
         }
         return _updateAllSteps(state)
     }
-    if (action.type === 'system/setMoles'){
-        var newState = {...state, system: {...state.system, moles: action.moles}}
+    if (action.type === 'system/setParams'){
+        var newState = {...state, system: {...state.system, ...action.params}}
         newState = _forEachStep(newState,_recalculateTemperatureAtIndex)
         newState = _updateAllSteps(newState)
         return newState
     }
-    if (action.type === 'steps/reorder'){
-        console.log(action.newOrder)
-        state = {...state, steps: action.newOrder}
+    if (action.type === 'steps/setAll'){
+        state = {...state, steps: action.newSteps}
         return _updateAllSteps(state)
     }
     return state
@@ -241,6 +241,8 @@ function _applyStepTypeConstraintsToSubsequentPoint(
             volume_2: subStep.volume,
             pressure_1: step.pressure,
             pressure_2: subStep.pressure,
+            temperature_1: step.temperature,
+            temperature_2: subStep.temperature,
         },system).entropyChange
         if (
             Math.abs(entropyChangeBefore) > 0.000005
@@ -348,25 +350,15 @@ function _getEntropyChange(step, nextStep, state) {
     return Thermodynamics.solveEntropyChange({
         pressure_1: step.pressure,
         volume_1: step.volume,
+        temperature_1: step.temperature,
         pressure_2: nextStep.pressure,
-        volume_2: nextStep.volume
+        volume_2: nextStep.volume,
+        temperature_2: nextStep.temperature,
     }, state.system).entropyChange
 }
 
-function _getNextIndex(index, state) {
-    var nextStepIndex = index + 1
-    if (nextStepIndex === state.steps.length) { nextStepIndex = 0} 
-    return nextStepIndex
-}
-
 function _getNextStep(state, index) {
-    return state.steps[_getNextIndex(index, state)]
-}
-
-function _getPreviousIndex(index,state){
-    var previousStepIndex = index - 1
-    if (previousStepIndex === -1){previousStepIndex = state.steps.length - 1}
-    return previousStepIndex
+    return state.steps[getNextIndex(index, state)]
 }
 
 function _operateOnSubsequentUntilCondition(state,startIndex,lambda,condition,subsequentIndexFinder){
@@ -382,9 +374,9 @@ function _operateOnSubsequentUntilCondition(state,startIndex,lambda,condition,su
 }
 
 function _operateOnNextUntilCondition (state,startIndex, lambda, condition){
-    return _operateOnSubsequentUntilCondition(state,startIndex,lambda,condition,_getNextIndex)
+    return _operateOnSubsequentUntilCondition(state,startIndex,lambda,condition,getNextIndex)
 }
 
 function _operateOnPreviousUntilCondition (state,startIndex, lambda, condition){
-    return _operateOnSubsequentUntilCondition(state,startIndex,lambda,condition,_getPreviousIndex)
+    return _operateOnSubsequentUntilCondition(state,startIndex,lambda,condition,getPreviousIndex)
 }

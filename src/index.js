@@ -4,8 +4,10 @@ import App from './components/App.js'
 import {Provider} from 'react-redux'
 import {createStore} from 'redux'
 import thermodynamicSystemReducer from './reducers'
+import { setPreset } from './actions/setPreset.js';
 
 const store = createStore(thermodynamicSystemReducer)
+store.dispatch(setPreset('carnotCycle'))
 
 ReactDOM.render(
   <Provider store={store}>

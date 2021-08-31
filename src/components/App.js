@@ -1,17 +1,13 @@
 import React from 'react';
 import StepList from './StepList';
+import ThermodynamicsPlot from './ThermodynamicsPlot';
 
 const App = () => {
     
     return(
         <div className=''>
             <div>
-                <canvas className='pv diagram'>
-
-                </canvas>
-                <canvas className='st diagram'>
-
-                </canvas>
+                <ThermodynamicsPlot />
             </div>
             <StepList />
         </div>
