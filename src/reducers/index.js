@@ -21,7 +21,7 @@ initialState.steps.push({
 const _applySubsequentPointConstraintsAtIndex = (
         state, index, applyConstraintsFunc, getSubsequentIndex
     ) => {
-    var step = state.steps[index]
+    var step = {...state.steps[index]}
     step = Thermodynamics.solvePVT(step, state.system)
     var subStepIndex = getSubsequentIndex(index, state)
     var subsubStepIndex = getSubsequentIndex(subStepIndex,state)
@@ -72,9 +72,15 @@ const steps_update = (state,action) => {
         _generateRTSorSignalCondition(startIndex)
     )
 
-    return _forEachStep(state,(state,index)=>{
+    state = _forEachStep(state,(state,index)=>{
         return _recalculateEntropyAtIndex(state, index)
     })
+    
+    state = _forEachStep(state,(state,index)=>{
+        return _calculateHeatWorkAtIndex(state,index)
+    })
+    state = _calculateHeatWorkTotal(state)
+    return state
 }
 
 const _steps_replaceAtIndex = (steps,index,newStep) => {
@@ -110,7 +116,7 @@ const steps_delete = (steps,index) => {
     return steps
 }
 
-const thermodynamicSystemReducer = (state=initialState,action) =>{
+const thermodynamicSystemReducer = (state=initialState,action) => {
     if (action.type === 'steps/update'){return steps_update(state,action)}
     if (action.type === 'steps/updateProperties'){
         action = _markUndefinedOneUnspecifiedPvtParameter(action)
@@ -149,6 +155,7 @@ const thermodynamicSystemReducer = (state=initialState,action) =>{
 export default thermodynamicSystemReducer
 
 function _updateAllSteps(newState) {
+    
     return _forEachStep(newState,
         (state, index) => {
             return steps_update(
@@ -179,8 +186,9 @@ function _generateRTSorSignalCondition(startIndex) {
 }
 
 function _recalculateEntropyAtIndex(state, index) {
-    var step = state.steps[index]
-    var nextStep = _getNextStep(state, index)
+    var step = {...state.steps[index]}
+    var nextIndex = getNextIndex(index,state)
+    var nextStep = {...state.steps[nextIndex]}
     const isUnfixedEntropyStepType = (
         step.type !== 'none' &&
         state.steps.length !== 1
@@ -194,6 +202,65 @@ function _recalculateEntropyAtIndex(state, index) {
         var stepEntropy = _getStepEntropy(step)
         nextStep.entropy = stepEntropy + step.entropyChange
     }
+    return {
+        ...state, steps: _steps_replaceAtIndex(
+            _steps_replaceAtIndex(state.steps, nextIndex, nextStep),
+            index, step)
+    }
+}
+
+function _calculateHeatWorkAtIndex(state,index){
+    var step = {...state.steps[index]}
+    var nextIndex = getNextIndex(index,state)
+    var nextStep = {...state.steps[nextIndex]}
+    var system = state.system
+    //TODO Add tests for this section
+    if (step.type === 'isochoric'){
+        step.work = 0
+        step.heat = system.moles * system.isochoricHeatCapacity * (nextStep.temperature - step.temperature)
+    }
+    if (step.type === 'isothermal'){
+        step.heat = state.system.moles * Thermodynamics.R * step.temperature * Math.log(
+            nextStep.volume / step.volume
+        )
+        step.work = step.heat
+    }
+    if (step.type === 'isobaric'){
+        step.work = (nextStep.volume - step.volume)*step.pressure
+        step.heat = system.moles * system.isochoricHeatCapacity * (nextStep.temperature - step.temperature) + step.work
+    }
+    if (step.type === 'isentropic'){
+        step.work = -system.moles * system.isochoricHeatCapacity * (nextStep.temperature - step.temperature)
+        step.heat = 0
+    }
+    return {...state, steps: _steps_replaceAtIndex(state.steps,index,step)}
+}
+
+function _calculateHeatWorkTotal(state){
+    var system = state.system
+    system.heatIn = 0
+    system.heatOut = 0
+    system.workIn = 0
+    system.workOut = 0
+    _forEachStep(state,(state,index)=>{
+        var step = state.steps[index]
+        if (step.heat>0){
+            system.heatIn += step.heat
+        }else(
+            system.heatOut -= step.heat
+        )
+        if (step.work>0){
+            system.workOut += step.work
+        }else(
+            system.workIn -= step.work
+        )
+        return state
+    })
+    system.workNet = system.workOut - system.workIn
+    system.heatNet = system.heatOut - system.heatIn
+    system.refrigerationCOP = -system.heatIn / system.workNet
+    system.heatingCOP = -system.heatOut / system.workNet
+    system.thermalEfficiency = system.workNet / system.heatIn
     return state
 }
 
@@ -355,10 +422,6 @@ function _getEntropyChange(step, nextStep, state) {
         volume_2: nextStep.volume,
         temperature_2: nextStep.temperature,
     }, state.system).entropyChange
-}
-
-function _getNextStep(state, index) {
-    return state.steps[getNextIndex(index, state)]
 }
 
 function _operateOnSubsequentUntilCondition(state,startIndex,lambda,condition,subsequentIndexFinder){

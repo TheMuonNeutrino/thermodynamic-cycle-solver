@@ -85,7 +85,7 @@ const StepListItem = ({step,index,setStep,deleteStep,deleteDisabled}) => {
     ]
 
     return(
-        <div className='ui container'>
+        <div className='ui container step-list-item'>
             <div className='ui large form'>
                 <div>
                     <h4 className='item-title'>
@@ -121,6 +121,22 @@ const StepListItem = ({step,index,setStep,deleteStep,deleteDisabled}) => {
                         readOnly={true}
                         updateKey='entropyChange'
                         updateValue={stepUpdateFunction}
+                    />
+                    <ParameterField
+                        label='Work done (J)'
+                        value={step.work}
+                        key='work'
+                        readOnly={true}
+                        updateValue={stepUpdateFunction}
+                        updateKey=''
+                    />
+                    <ParameterField
+                        label='Heat supplied (J)'
+                        value={step.heat}
+                        key='heat'
+                        readOnly={true}
+                        updateValue={stepUpdateFunction}
+                        updateKey=''
                     />
                 </div>
                 <hr/>

@@ -1,0 +1,26 @@
+.grid-container {
+    margin-left: auto;
+    margin-right: auto;
+    display: grid;
+    grid-template-columns: 50vw 50vw;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+        "graphA graphB"
+        "main main";
+}
+
+.grid-itemA {
+    grid-area: graphA;
+    height: fit-content;
+    width: fit-content;
+    margin-left: auto;
+}
+.grid-itemB{
+    grid-area: graphB;
+    height: fit-content;
+    width: fit-content;
+}
+.grid-itemMain {
+    grid-area: main;
+    height: 100vh;
+}

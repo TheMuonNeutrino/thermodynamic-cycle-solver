@@ -7,7 +7,7 @@
     margin-bottom: 0.3em !important;
 }
 
-.container {
+.step-list-item {
 	cursor: move;
 	cursor: -webkit-grabbing;
 }

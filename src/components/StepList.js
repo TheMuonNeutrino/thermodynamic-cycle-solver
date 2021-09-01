@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import {connect} from 'react-redux';
-import { Button, Form } from 'semantic-ui-react';
+import { Button, Form, Table, Icon } from 'semantic-ui-react';
 import { steps_updateProperties,steps_add,steps_reorder,steps_delete, steps_reverse, system_setParams } from '../actions';
+import { ActionCreators as UndoActionCreators } from 'redux-undo'
 import { setPreset } from '../actions/setPreset';
 import StepListItem from './StepListItem'
 import { ReactSortable } from 'react-sortablejs';
@@ -9,10 +10,54 @@ import './StepListItem.css';
 import ParameterField from './ParameterField';
 import Thermodynamics from '../Thermodynamics';
 
-const StepList = ({
-    steps,system,steps_updateProperties,steps_add,steps_reorder,steps_delete,setPreset,steps_reverse,system_setParams
-}) => {
+const SystemStatsTable = ({system}) => {
+    const refrigerationEfficiency = (system.refrigerationCOP*100).toFixed(2)
+    const heatingEfficiency = (system.heatingCOP*100).toFixed(2)
+    const thermalEfficiency = (system.thermalEfficiency * 100).toFixed(2)
 
+    return(
+        <Table collapsing size='large'>
+                    <Table.Body>
+                        <Table.Row>
+                            <Table.Cell>Heat In</Table.Cell>
+                            <Table.Cell>{system.heatIn.toFixed(2)} J</Table.Cell>
+                        </Table.Row>
+                        <Table.Row>
+                            <Table.Cell>Heat Out</Table.Cell>
+                            <Table.Cell>{system.heatOut.toFixed(2)} J</Table.Cell>
+                        </Table.Row>
+                        <Table.Row>
+                            <Table.Cell>Net Work</Table.Cell>
+                            <Table.Cell>{system.workNet.toFixed(2)} J</Table.Cell>
+                        </Table.Row>
+                        {refrigerationEfficiency > 0 ?
+                            <Table.Row>
+                                <Table.Cell>Refrigeration efficiency</Table.Cell>
+                                <Table.Cell>{refrigerationEfficiency} %</Table.Cell>
+                            </Table.Row>
+                        :null}
+                        {heatingEfficiency > 0 ?
+                            <Table.Row>
+                                <Table.Cell>Heating efficiency (heat pump)</Table.Cell>
+                                <Table.Cell>{heatingEfficiency} %</Table.Cell>
+                            </Table.Row>
+                        :null}
+                        {thermalEfficiency > 0 ?   
+                            <Table.Row>
+                                <Table.Cell>Thermal efficiency (engine)</Table.Cell>
+                                <Table.Cell>{thermalEfficiency} %</Table.Cell>
+                            </Table.Row>
+                        :null}
+                    </Table.Body>
+                </Table>
+    )
+}
+
+const StepList = ({
+    steps,system,
+    steps_updateProperties,steps_add,steps_reorder,steps_delete,setPreset,steps_reverse,system_setParams,
+    canUndo,canRedo,onUndo,onRedo
+}) => {
     const [presetValue, setPresetValue] = React.useState('')
 
     const presetOptions = [
@@ -20,8 +65,7 @@ const StepList = ({
             text: '',
             value: '',
             id: 'none'
-        },
-        {
+        },{
             text: 'Carnot Cycle',
             value: 'carnotCycle',
             id: 'carnotCycle'
@@ -55,6 +99,15 @@ const StepList = ({
         )
     }
 
+    document.body.addEventListener('keydown',(e)=>{
+        if (e.key === 'z' && e.ctrlKey === true){
+            onUndo()
+        }
+        if (e.key === 'y' && e.ctrlKey === true){
+            onRedo()
+        }
+    })
+
     return(
         <div>
             <div className='ui container'>
@@ -76,6 +129,20 @@ const StepList = ({
                                 className='button-fill-height'
                             >
                                 Reverse Cycle
+                            </Button>
+                        </div>
+                        <div className='field'>
+                            <Button icon labelPosition='right' disabled={!canUndo} 
+                                onClick={onUndo} className='button-fill-height'
+                            >
+                                Undo
+                                <Icon name='undo'/>
+                            </Button>
+                            <Button icon labelPosition='right' disabled={!canRedo} 
+                                onClick={onRedo} className='button-fill-height'
+                            >
+                                Redo
+                                <Icon name='redo'/>
                             </Button>
                         </div>
                     </div>
@@ -103,6 +170,7 @@ const StepList = ({
                         />
                     </div>
                 </div>
+                <SystemStatsTable system={system}/>
                 <hr/>
             </div>
             <ReactSortable 
@@ -130,15 +198,16 @@ const StepList = ({
             <div className='ui container'>
                 <Button primary onClick={addStep}>Add step</Button>
             </div>
-            
         </div>
     )
 }
 
 const mapStateToProps = (state) => {
-    return state
+    return {...state.present, canUndo: state.past.length > 0, canRedo: state.future.length > 0}
 }
 
 export default connect(mapStateToProps,{
-    steps_updateProperties,steps_add,steps_reorder,steps_delete,steps_reverse,setPreset,system_setParams
+    steps_updateProperties,steps_add,steps_reorder,steps_delete,steps_reverse,setPreset,system_setParams,
+    onUndo: UndoActionCreators.undo,
+    onRedo: UndoActionCreators.redo
 })(StepList)

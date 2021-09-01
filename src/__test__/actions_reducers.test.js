@@ -1,7 +1,27 @@
 import Thermodynamics from '../Thermodynamics'
 import {createStore} from 'redux'
 import thermodynamicSystemReducer from '../reducers'
-import {steps_add, steps_update, steps_updateProperties, steps_delete, system_setMoles} from '../actions'
+import {steps_add, steps_update, steps_updateProperties, steps_delete, system_setParams, steps_reverse} from '../actions'
+import { hasDefinedKey } from '../Utils'
+
+function _removeUntestedKeys(state,stepUntested=['heat','work'],systemUntested = [
+    'heatIn','heatOut','workIn','workOut','heatNet','workNet','heatingCOP','refrigerationCOP','thermalEfficiency'
+]) {
+    for (var i=0; i<state.steps.length; i++){
+        stepUntested.forEach((key)=>{
+            if (hasDefinedKey(state.steps[i],key)){
+                delete state.steps[i][key]
+            }
+        })
+    }
+    systemUntested.forEach((key)=>{
+        console.log(key,hasDefinedKey(state.system,key))
+        if (hasDefinedKey(state.system,key)){
+            delete state.system[key]
+        }
+    })
+    return state
+}
 
 describe('App state - Basic tests',()=>{
     const system = {
@@ -88,27 +108,35 @@ describe('App state - Basic tests',()=>{
         store.dispatch(steps_add(-1,secondStep))
         store.dispatch(steps_update(0,thirdStep))
         expect(
-            store.getState()
+            _removeUntestedKeys(store.getState())
         ).toStrictEqual({
             system: system,
             steps: [thirdStep,secondStep]
         })
     })
     it('Allows a step to be deleted',()=>{
+        store.dispatch(steps_add(1,secondStep))
+        store.dispatch(steps_delete(0))
+        expect(
+            _removeUntestedKeys(store.getState())
+        ).toStrictEqual({
+            system: system,
+            steps: [secondStep]
+        })
+    })
+    it('Ignores step deletion if only one step remains',()=>{
+        var stateBefore = store.getState()
         store.dispatch(steps_delete(0))
         expect(
             store.getState()
-        ).toStrictEqual({
-            system: system,
-            steps: []
-        })
+        ).toStrictEqual(stateBefore)
     })
     it('Allows system moles to be set, updating entropy change computation and temperature',()=>{
         store.dispatch(steps_add(-1,secondStep))
         store.dispatch(steps_update(0,{...firstStep, type:'isobaric'}))
-        store.dispatch(system_setMoles(2))
+        store.dispatch(system_setParams({moles: 2}))
         expect(
-            store.getState()
+            _removeUntestedKeys( store.getState())
         ).toStrictEqual({
             system: {...system, moles: 2},
             steps: [{
@@ -128,7 +156,7 @@ describe('App state - Basic tests',()=>{
         store.dispatch(steps_add(-1,secondStep))
         store.dispatch(steps_update(0,{...firstStep,type:'isobaric'}))
         expect(
-            store.getState()
+            _removeUntestedKeys(store.getState())
         ).toStrictEqual({
             system: system,
             steps: [{...firstStep, entropyChange: expectedEntropyChangeFirstToSecond, type: 'isobaric'},
@@ -154,7 +182,7 @@ describe('App state - Basic tests',()=>{
         const resState = store.getState()
         expect(resState.steps[1].pressure).toBeCloseTo(10000)
         expect(
-            store.getState()
+            _removeUntestedKeys(store.getState())
         ).toStrictEqual({
             system: system,
             steps: [{...firstStep, entropyChange: expectedEntropyChangeFirstToSecond, type: 'isobaric'},
@@ -163,7 +191,9 @@ describe('App state - Basic tests',()=>{
     })
     it('Allows target properties to be updated for a step',()=>{
         store.dispatch(steps_updateProperties(0,{type:'isobaric',volume: 2}))
-        expect(store.getState()).toStrictEqual({
+        expect(
+            _removeUntestedKeys(store.getState())
+        ).toStrictEqual({
             system: system,
             steps: [{...firstStep, type:'isobaric',volume:2,temperature:secondStep.temperature}]
         })
@@ -298,6 +328,20 @@ describe('App state - Three step types',()=>{
         expect(resState.steps[3].temperature).toBeCloseTo(fourthStep.temperature)
         expect(resState.steps[2].temperature).toBeCloseTo(thirdStep.temperature)
     })
+    it('Allows cycle direction to be reverse',()=>{
+        const stateBefore = store.getState()
+        store.dispatch(steps_reverse(store.getState().steps))
+        const stateAfter = store. getState()
+        const len = stateBefore.steps.length
+        var keyArray = ['pressure','volume','temperature']
+        keyArray.forEach((key) => {
+            expect(stateBefore.steps[0][key]).toBeCloseTo(stateAfter.steps[0][key])
+            for (var i=1; i<len; i++){
+                expect(stateBefore.steps[i][key]).toBeCloseTo(stateAfter.steps[len-i][key])
+            }
+        });
+        
+    })
 })
 describe('App state - Isentropic step logic',()=>{
     const systemA = {
@@ -388,8 +432,8 @@ describe('App state - Isentropic as secondRefStep',()=>{
             system: {moles: 1, isochoricHeatCapacity: 20},
             steps: [
                 firstStep,
-                {...thirdStep, pressure: firstStep.pressure},
-                {...thirdStep, pressure: thirdStep.pressure + 10000, type: 'none'}
+                {...thirdStep, pressure: firstStep.pressure, temperature: undefined},
+                {...thirdStep, pressure: thirdStep.pressure + 10000, temperature:undefined, type: 'none'}
             ]
         })
         store.dispatch(steps_updateProperties(0,{}))
@@ -405,8 +449,8 @@ describe('App state - Isentropic as secondRefStep',()=>{
             system: {moles: 1, isochoricHeatCapacity: 20},
             steps: [
                 {...firstStep, type:'isothermal'},
-                {...thirdStep, pressure: firstStep.pressure},
-                {...thirdStep, pressure: thirdStep.pressure + 10000, type: 'none'}
+                {...thirdStep, pressure: firstStep.pressure, temperature: undefined},
+                {...thirdStep, pressure: thirdStep.pressure + 10000, temperature: undefined, type: 'none'}
             ]
         })
         store.dispatch(steps_updateProperties(0,{}))

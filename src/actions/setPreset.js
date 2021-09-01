@@ -3,15 +3,7 @@ export const setPreset = (preset) => {
     if (preset === 'carnotCycle'){
         action.newSteps = [
             {
-                staticEntropy: 0,
-                pressure: 100000,
-                temperature: 400,
-                type: 'isothermal'
-            },{
-                temperature: 400,
-                pressure: 200000,
-                type: 'isentropic',
-            },{
+                staticEntropy: 1,
                 temperature: 500,
                 pressure: 2e5,
                 type: 'isothermal',
@@ -19,6 +11,14 @@ export const setPreset = (preset) => {
                 temperature: 500,
                 pressure: 1e5,
                 type: 'isentropic'
+            },{
+                pressure: 100000,
+                temperature: 400,
+                type: 'isothermal'
+            },{
+                temperature: 400,
+                pressure: 200000,
+                type: 'isentropic',
             }
         ]
     }

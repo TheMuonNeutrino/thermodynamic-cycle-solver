@@ -2,8 +2,7 @@ import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import { steps_updateProperties } from '../actions';
 import {VictoryLine,VictoryChart,VictoryScatter, VictoryCursorContainer, VictoryLabel, VictoryAxis} from 'victory';
-import { generatePlotLineDataPV } from '../generatePlotLineData';
-import { numToSSColumn } from '../Utils';
+import { hasDefinedKey, numToSSColumn } from '../Utils';
 
 const DraggablePoint = (params) =>{
 
@@ -39,26 +38,46 @@ const DraggablePoint = (params) =>{
     )
 }
 
-const Plot = ({steps,system,steps_updateProperties}) =>{
+const Plot = ({
+    steps,system,steps_updateProperties,
+    xkey,ykey,xlabel,ylabel,
+    dataPointsGenerator
+}) =>{
+
+    for (var i=0; i<steps.length; i++){
+        if (hasDefinedKey(steps[i],'staticEntropy')){
+            steps[i].entropy = steps[i].staticEntropy
+        }
+    }
 
     const [canvasDraggable,setCanvasDraggable] = React.useState(false)
     const [mouseLoc, setMouseLoc] = React.useState({x: null, y: null})
 
+    const [minX, setMinX] = React.useState(0)
     const [maxX, setMaxX] = React.useState(0.1)
     const [maxY, setMaxY] = React.useState(500000)
 
     const posSetter = (index) => {
         return (x,y)=>{
-            steps_updateProperties(index,{pressure: y, volume: x})
+            var update = {}
+            if (xkey === 'entropy'){
+                if (hasDefinedKey(steps[index],'staticEntropy')){
+                    update.staticEntropy = x
+                }
+            }
+            update[xkey] = x
+            update[ykey] = y
+            var dragPointGroup = {index: index, xkey: xkey}
+            steps_updateProperties(index,update,dragPointGroup)
         }
     }
     
-    var dataLines = generatePlotLineDataPV(steps,system)
+    var dataLines = dataPointsGenerator(steps,system)
 
     var dataPoints = steps.map((step,index)=>{
         return {
-            x:step.volume,
-            y:step.pressure,
+            x:step[xkey],
+            y:step[ykey],
             posSetter: posSetter(index), 
             canvasDraggable: canvasDraggable,
             mouseLoc: mouseLoc,
@@ -66,29 +85,46 @@ const Plot = ({steps,system,steps_updateProperties}) =>{
         }
     })
 
+    var minDomain
+    if (xkey === 'entropy'){
+        minDomain = {x:minX-(0.1*(maxX-minX)), y:0}
+    }else{
+        minDomain = {x: 0, y: 0}
+    }
+    var maxDomain = {x: maxX+(0.1*(maxX-minX)), y: maxY*1.1}
+
     useEffect(()=>{
-        const getMaxX = () => {return Math.max(...steps.map((step)=>{return step.volume}))}
-        const getMaxY = () => {return Math.max(...steps.map((step)=>{return step.pressure}))}
+        const getArrayX = () => {return steps.map((step)=>{return step[xkey]})}
+        const getMaxY = () => {return Math.max(...steps.map((step)=>{return step[ykey]}))}
+        const arrayX = getArrayX()
+        if (xkey === 'entropy'){
+            if (!canvasDraggable){
+                setMinX(Math.min(...arrayX))
+            }
+            if (canvasDraggable && mouseLoc.x < minX*1.06){
+                setMinX(Math.min(...arrayX))
+            }
+        }
         if (!canvasDraggable){
-            setMaxX(getMaxX())
+            setMaxX(Math.max(...arrayX))
             setMaxY(getMaxY())
         }
         if (canvasDraggable && mouseLoc.x > maxX*1.06){
-            setMaxX(getMaxX())
+            setMaxX(Math.max(...arrayX))
         }
         if (canvasDraggable && mouseLoc.y > maxY*1.06){
             setMaxY(getMaxY())
         }
-    },[steps,canvasDraggable,mouseLoc,maxX,maxY])
+    },[steps,canvasDraggable,mouseLoc,maxX,maxY,minX,xkey,ykey])
 
     return(
-        <div {...{style: {width: '500px', height: '500px'}}}>
+        <div {...{style: {width: '100%', height: '100%'}}}>
             <VictoryChart 
                 height={500}
                 width={500}
                 padding={{top: 20, bottom: 60, left: 100, right: 20}}
-                minDomain = {{x:0, y:0}}
-                maxDomain = {{x: maxX*1.1, y: maxY*1.1}}
+                minDomain = {minDomain}
+                maxDomain = {maxDomain}
                 events={[{
                     target: 'parent',
                     eventHandlers: {
@@ -136,12 +172,12 @@ const Plot = ({steps,system,steps_updateProperties}) =>{
                     }
                 />
                 <VictoryAxis 
-                    label='Volume (m^3)'
+                    label={xlabel}
                     style = {{axisLabel: {padding: 33}}}
                 />
                 <VictoryAxis 
                     dependentAxis
-                    label='Pressure (Pa)'
+                    label={ylabel}
                     style = {{axisLabel: {padding: 78}}}
                 />
             </VictoryChart>
@@ -150,7 +186,7 @@ const Plot = ({steps,system,steps_updateProperties}) =>{
 }
 
 var mapStateToProps = (state)=>{
-    return(state)
+    return(state.present)
 }
 
 export default connect(mapStateToProps,{steps_updateProperties})(Plot)
