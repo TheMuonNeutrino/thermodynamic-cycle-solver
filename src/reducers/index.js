@@ -237,7 +237,7 @@ function _calculateHeatWorkAtIndex(state,index){
 }
 
 function _calculateHeatWorkTotal(state){
-    var system = state.system
+    var system = {...state.system}
     system.heatIn = 0
     system.heatOut = 0
     system.workIn = 0
@@ -261,7 +261,7 @@ function _calculateHeatWorkTotal(state){
     system.refrigerationCOP = -system.heatIn / system.workNet
     system.heatingCOP = -system.heatOut / system.workNet
     system.thermalEfficiency = system.workNet / system.heatIn
-    return state
+    return {...state, system: system}
 }
 
 function _getStepEntropy(step) {

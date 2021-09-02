@@ -24,3 +24,15 @@
     grid-area: main;
     height: 100vh;
 }
+
+.header {
+    font-size: 40px !important;
+}
+
+.header div {
+    width: 100%;
+}
+
+.ui.right.floated.button {
+    margin-top: 32px !important;
+}

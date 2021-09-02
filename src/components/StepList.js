@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import {connect} from 'react-redux';
-import { Button, Form, Table, Icon } from 'semantic-ui-react';
+import { Button, Form, Table, Icon, Popup } from 'semantic-ui-react';
 import { steps_updateProperties,steps_add,steps_reorder,steps_delete, steps_reverse, system_setParams } from '../actions';
 import { ActionCreators as UndoActionCreators } from 'redux-undo'
 import { setPreset } from '../actions/setPreset';
@@ -56,9 +56,11 @@ const SystemStatsTable = ({system}) => {
 const StepList = ({
     steps,system,
     steps_updateProperties,steps_add,steps_reorder,steps_delete,setPreset,steps_reverse,system_setParams,
-    canUndo,canRedo,onUndo,onRedo
+    canUndo,canRedo,onUndo,onRedo,
+    showHelp, setShowHelp
 }) => {
     const [presetValue, setPresetValue] = React.useState('')
+    const popupRef = React.useRef()
 
     const presetOptions = [
         {
@@ -113,24 +115,37 @@ const StepList = ({
             <div className='ui container'>
                 <div className='ui large form'>
                     <div className='fields'>
-                        <div className='field'>
-                            <Form.Dropdown
-                                search selection
-                                options={presetOptions}
-                                placeholder='Select a preset'
-                                onChange={(e,data)=>{setPresetValue(data.value)}}
-                                value={presetValue}
-                                className=''
-                            />
-                        </div>
-                        <div className='field'>
-                            <Button 
-                                primary onClick={()=>{steps_reverse(steps)}}
-                                className='button-fill-height'
-                            >
-                                Reverse Cycle
-                            </Button>
-                        </div>
+                        <Popup
+                            trigger={<div className='field'>
+                                <Form.Dropdown
+                                    search selection
+                                    options={presetOptions}
+                                    placeholder='Select a preset'
+                                    onChange={(e,data)=>{setPresetValue(data.value)}}
+                                    value={presetValue}
+                                    className=''
+                                />
+                            </div>}
+                            content={"Various common cycles can be selected from available presets"}
+                            position='top center'
+                            open = {showHelp}
+                            size='large'
+                        />
+                        <Popup
+                            trigger={
+                                <div className='field'>
+                                <Button 
+                                    primary onClick={()=>{steps_reverse(steps)}}
+                                    className='button-fill-height'
+                                >
+                                    Reverse Cycle
+                                </Button>
+                                </div>
+                            }
+                            content='Swaps the order of points in the cycle, alternating between a heat engine or heat pump configuration'
+                            open={showHelp}
+                            size='large'
+                        />
                         <div className='field'>
                             <Button icon labelPosition='right' disabled={!canUndo} 
                                 onClick={onUndo} className='button-fill-height'
@@ -147,12 +162,20 @@ const StepList = ({
                         </div>
                     </div>
                     <div className='fields'>
-                        <ParameterField 
-                            label= 'Moles of gas (mol)'
-                            value={system.moles}
-                            key='moles'
-                            updateKey='moles'
-                            updateValue={system_setParams}
+                        <Popup
+                            trigger={
+                                <ParameterField 
+                                    label= 'Moles of gas (mol)'
+                                    value={system.moles}
+                                    key='moles'
+                                    updateKey='moles'
+                                    updateValue={system_setParams}
+                                />
+                            }   
+                            content = "System parameters can be updated by typing in the boxes"
+                            open = {showHelp}
+                            position = 'left center'
+                            size='large'
                         />
                         <ParameterField 
                             label= 'Isochoric heat capacity (J/K)'
@@ -182,15 +205,31 @@ const StepList = ({
                 chosenClass='selected-list-item'
             >
                 {steps.map((step,index)=>{
+                    const steplistitem = (<StepListItem 
+                        step={step} 
+                        index={index} 
+                        setStep={steps_updateProperties}
+                        deleteStep={steps_delete}
+                        deleteDisabled={disableDelete}
+                    ></StepListItem>)
                     return(
                         <div className='item' key={index}>
-                            <StepListItem 
-                                step={step} 
-                                index={index} 
-                                setStep={steps_updateProperties}
-                                deleteStep={steps_delete}
-                                deleteDisabled={disableDelete}
-                            ></StepListItem>
+                            {index === 0 ? <Popup
+                                trigger={<div ref={popupRef}>{steplistitem}</div>}
+                                content={"Each step can be dragged to reorder it in the list"}
+                                open={showHelp}
+                                position='top center'
+                                size='large'
+                                offset={({popper,reference,placement})=>{
+                                    console.log(popupRef.current)
+                                    const top = popupRef.current.getBoundingClientRect().top
+                                    console.log(top - window.innerHeight)
+                                    if (top-window.innerHeight > 0){
+                                        return [0,top-window.innerHeight]
+                                    }
+                                    return [0,0]
+                                }}
+                            />:steplistitem}
                         </div>
                     )
                 })}
