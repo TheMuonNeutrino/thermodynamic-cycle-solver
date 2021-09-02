@@ -18,7 +18,7 @@ const App = () => {
                 <Header size='huge'>
                     <Image circular src={logo}/>
                     Thermodynamic Cycle Solver
-                    <Button floated='right' as='a' href='https://github.com'>
+                    <Button floated='right' as='a' href='https://github.com/TheMuonNeutrino/thermodynamic-cycle-solver'>
                         <Icon name='github'/> GitHub
                     </Button>
                     <Button floated='right'
