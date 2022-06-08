@@ -25,7 +25,7 @@
     height: 100vh;
 }
 
-.header {
+#root *.header {
     font-size: 40px !important;
 }
 

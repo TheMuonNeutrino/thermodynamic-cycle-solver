@@ -15,7 +15,6 @@ function _removeUntestedKeys(state,stepUntested=['heat','work'],systemUntested =
         })
     }
     systemUntested.forEach((key)=>{
-        console.log(key,hasDefinedKey(state.system,key))
         if (hasDefinedKey(state.system,key)){
             delete state.system[key]
         }
@@ -128,8 +127,8 @@ describe('App state - Basic tests',()=>{
         var stateBefore = store.getState()
         store.dispatch(steps_delete(0))
         expect(
-            store.getState()
-        ).toStrictEqual(stateBefore)
+            store.getState()['steps']
+        ).toStrictEqual(stateBefore['steps'])
     })
     it('Allows system moles to be set, updating entropy change computation and temperature',()=>{
         store.dispatch(steps_add(-1,secondStep))
