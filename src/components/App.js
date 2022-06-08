@@ -3,7 +3,7 @@ import { generatePlotLineDataPV, generatePlotLineDataST } from '../generatePlotL
 import StepList from './StepList';
 import ThermodynamicsPlot from './ThermodynamicsPlot';
 import './App.css'
-import { Button, Icon, Header, Image, Popup } from 'semantic-ui-react';
+import { Button, Icon, Header, Menu, Image, Popup } from 'semantic-ui-react';
 import logo from '../assets/logo512.png'
 import MathJax from 'react-mathjax'
 
@@ -15,32 +15,33 @@ const App = () => {
     return(
         <div>
             <div className='ui container'>
-                <Header size='huge'>
-                    <Image circular src={logo}/>
-                    Thermodynamic Cycle Solver
-                    <Button floated='right' as='a' href='https://github.com/TheMuonNeutrino/thermodynamic-cycle-solver'>
-                        <Icon name='github'/> GitHub
-                    </Button>
-                    <Button floated='right'
-                        onClick = {()=>{setShowAbout(!showAbout);setShowHelp(false)}}
-                    >
-                        About
-                    </Button>
-                    <Popup
-                        on='click'
-                        trigger={
-                            <Button floated='right'>
-                                <Icon name='question'/> Help
-                            </Button>
-                        }
-                        content={<p>Keyboard shortcuts: <br/>Ctrl+Z to undo <br/> Ctrl + Y to redo</p>}
-                        onOpen={()=>{setShowHelp(true);setShowAbout(false)}}
-                        onClose={()=>{setShowHelp(false)}}
-                        size='large'
-                    />
-                    <br/>
-                </Header>
-                            
+                <div id="header-container">
+                    <Header size='huge'>
+                        <Image circular src={logo}/>
+                        Thermodynamic Cycle Solver
+                        <Button floated='right' as='a' href='https://github.com/TheMuonNeutrino/thermodynamic-cycle-solver'>
+                            <Icon name='github'/> GitHub
+                        </Button>
+                        <Button floated='right'
+                            onClick = {()=>{setShowAbout(!showAbout);setShowHelp(false)}}
+                        >
+                            About
+                        </Button>
+                        <Popup
+                            on='click'
+                            trigger={
+                                <Button floated='right'>
+                                    <Icon name='question'/> Help
+                                </Button>
+                            }
+                            content={<p>Keyboard shortcuts: <br/>Ctrl+Z to undo <br/> Ctrl + Y to redo</p>}
+                            onOpen={()=>{setShowHelp(true);setShowAbout(false)}}
+                            onClose={()=>{setShowHelp(false)}}
+                            size='large'
+                        />
+                        <br/>
+                    </Header>                
+                </div>
             </div>
             {showAbout ?
                 <MathJax.Provider>

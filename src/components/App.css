@@ -27,12 +27,14 @@
 
 #root *.header {
     font-size: 40px !important;
-}
-
-.header div {
-    width: 100%;
+    word-wrap: normal;
 }
 
 .ui.right.floated.button {
     margin-top: 32px !important;
+}
+
+#header-container {
+    display: inline-block;
+    width: 100%;
 }
